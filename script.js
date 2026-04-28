@@ -1,24 +1,36 @@
-const FORM_SUBMIT_URL = "https://formsubmit.co/theshubhub@gmail.com";
-const STORE_EMAIL = "theshubhub@gmail.com";
+const APP_CONFIG = window.ThesHubHubConfig || {};
+const STORE_EMAIL = readPublicConfig("storeEmail", "theshubhub@gmail.com");
+const FORM_SUBMIT_URL = readPublicConfig("formSubmitUrl", `https://formsubmit.co/${STORE_EMAIL}`);
+const ADMIN_PASSWORD = readSensitiveConfig("adminPassword", "");
 
-// SECURITY: Local preview password - ONLY used on localhost or file:// URLs
-// In production (https://), use Supabase email authentication instead
-// Change this password frequently if shared with team
-const ADMIN_PASSWORD = "admin123"; // TODO: Change this to a secure random value
-
-const ADMIN_EMAIL_ALLOWLIST = ["theshubhub@gmail.com"];
 const NETLIFY_FORM_NAME = "theshubhub-orders";
-const DISCORD_FUNCTION_PATH = "/.netlify/functions/discord-order";
+const DISCORD_FUNCTION_PATH = "/api/discord-order"; // Vercel route (was /.netlify/functions/discord-order)
 
 const SUPABASE_CONFIG = {
-  url: "https://rfnfjuwuzihjxgamnyou.supabase.co",
-  publishableKey: "sb_publishable_Y4aG9YCLOoX0mqtGL5yJfw_-fZolStZ",
+  url: readPublicConfig("supabaseUrl", "https://rfnfjuwuzihjxgamnyou.supabase.co"),
+  publishableKey: readPublicConfig("supabasePublishableKey", "sb_publishable_Y4aG9YCLOoX0mqtGL5yJfw_-fZolStZ"),
   ordersTable: "orders",
   screenshotsBucket: "payment-screenshots",
   settingsTable: "store_settings",
   assetsBucket: "store-assets",
   paymentSettingsKey: "payment"
 };
+
+function readPublicConfig(key, fallback) {
+  const value = String(APP_CONFIG[key] || "").trim();
+  if (!value || /^%[A-Z0-9_]+%$/i.test(value)) {
+    return fallback;
+  }
+  return value;
+}
+
+function readSensitiveConfig(key, fallback) {
+  const value = String(APP_CONFIG[key] || "").trim();
+  if (!value || /^%[A-Z0-9_]+%$/i.test(value)) {
+    return fallback;
+  }
+  return value;
+}
 
 const STORAGE_KEYS = {
   orders: "orders",
@@ -113,7 +125,6 @@ async function initApp() {
   updateAdminAlertButton();
   initializeSupabase();
   configureAdminLoginUi();
-  await restoreAdminAccess();
   await loadPaymentSettings();
   renderProducts();
   renderAdminCoupons();
@@ -157,6 +168,7 @@ function cacheElements() {
   els.adminEmail = document.querySelector("#adminEmail");
   els.adminPassword = document.querySelector("#adminPassword");
   els.adminUnlock = document.querySelector("#adminUnlock");
+  els.adminUnlockPassword = document.querySelector("#adminUnlockPassword");
   els.localAdminLogin = document.querySelector("#localAdminLogin");
   els.adminAuthNote = document.querySelector("#adminAuthNote");
   els.adminSignOut = document.querySelector("#adminSignOut");
@@ -281,13 +293,15 @@ function bindEvents() {
     });
   });
 
-  els.adminUnlock.addEventListener("click", () => {
-    if (isLocalPreview()) {
-      unlockLocalAdminPreview();
-      return;
-    }
-    void unlockAdmin();
-  });
+  if (els.adminUnlockPassword) {
+    els.adminUnlockPassword.addEventListener("click", () => {
+      if (els.adminPassword && els.adminPassword.value === ADMIN_PASSWORD) {
+        unlockAdminUi("local");
+      } else {
+        alert("Wrong admin password. Please try again.");
+      }
+    });
+  }
   els.addProductForm.addEventListener("submit", handleAddProduct);
   els.editProductForm.addEventListener("submit", handleEditProduct);
   els.adminProductSelect.addEventListener("change", fillAdminEditForm);
@@ -368,74 +382,33 @@ function isLocalPreview() {
   return window.location.protocol === "file:" || /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname || "");
 }
 
-function isAllowedAdminEmail(email) {
-  return ADMIN_EMAIL_ALLOWLIST.includes(String(email || "").trim().toLowerCase());
-}
-
-function hasSecureAdminSession() {
-  return Boolean(state.adminUser && isAllowedAdminEmail(state.adminUser.email));
-}
-
 function canManageAdminData() {
-  return state.adminUnlocked && (state.adminAuthMode === "local" || hasSecureAdminSession());
+  return state.adminUnlocked;
 }
 
 function canManageCloudAdminData() {
-  return state.adminUnlocked && hasSecureAdminSession();
+  return state.adminUnlocked;
 }
 
 function configureAdminLoginUi() {
-  const localPreview = isLocalPreview();
   if (els.adminEmailField) {
-    els.adminEmailField.classList.toggle("hidden", localPreview);
+    els.adminEmailField.classList.add("hidden");
   }
   if (els.localAdminLogin) {
-    els.localAdminLogin.classList.toggle("hidden", !localPreview);
-  }
-
-  if (els.adminUnlock) {
-    els.adminUnlock.textContent = localPreview ? "Open Local Admin" : "Send Secure Login Link";
+    els.localAdminLogin.classList.remove("hidden");
   }
 
   if (els.adminAuthNote) {
-    els.adminAuthNote.textContent = localPreview
-      ? "Public admin now uses Supabase email sign-in. Local preview can still use the old password."
-      : "Public admin now uses Supabase email sign-in with an approved admin email.";
+    els.adminAuthNote.textContent = "Enter your admin password to access the admin panel.";
+  }
+
+  if (els.adminSignOut) {
+    els.adminSignOut.classList.add("hidden");
   }
 }
 
 async function restoreAdminAccess() {
-  if (!state.supabase.ready || !state.supabase.client || !state.supabase.client.auth) {
-    return;
-  }
-
-  state.supabase.client.auth.onAuthStateChange((_event, session) => {
-    const user = session && session.user ? session.user : null;
-    if (user && isAllowedAdminEmail(user.email)) {
-      unlockAdminUi("secure", user);
-      return;
-    }
-
-    if (state.adminAuthMode === "secure") {
-      lockAdminUi();
-    }
-  });
-
-  try {
-    const { data, error } = await state.supabase.client.auth.getSession();
-    if (error) {
-      throw error;
-    }
-
-    const user = data && data.session ? data.session.user : null;
-    if (user && isAllowedAdminEmail(user.email)) {
-      unlockAdminUi("secure", user);
-    } else if (user) {
-      await state.supabase.client.auth.signOut();
-    }
-  } catch (error) {
-    console.warn("Could not restore secure admin session", error);
-  }
+  return undefined;
 }
 
 function unlockAdminUi(mode, user = null) {
@@ -446,9 +419,6 @@ function unlockAdminUi(mode, user = null) {
   state.adminKnownOrderIds = new Set();
   els.adminLogin.classList.add("hidden");
   els.adminTools.classList.remove("hidden");
-  if (els.adminSignOut) {
-    els.adminSignOut.classList.toggle("hidden", mode !== "secure");
-  }
   updateAdminAlertButton();
   startAdminOrdersAutoRefresh();
   void refreshAdminOrders(true);
@@ -460,9 +430,6 @@ function lockAdminUi() {
   state.adminUser = null;
   els.adminLogin.classList.remove("hidden");
   els.adminTools.classList.add("hidden");
-  if (els.adminSignOut) {
-    els.adminSignOut.classList.add("hidden");
-  }
   stopAdminOrdersAutoRefresh();
 }
 
@@ -1747,66 +1714,24 @@ function getGameIdLine(order) {
 }
 
 async function unlockAdmin() {
-  const email = String(els.adminEmail && els.adminEmail.value || "").trim().toLowerCase();
-  if (!email) {
-    alert("Enter your admin email first.");
-    return;
-  }
-
-  if (!isAllowedAdminEmail(email)) {
-    alert("That email is not allowed for admin access.");
-    return;
-  }
-
-  if (!state.supabase.ready || !state.supabase.client || !state.supabase.client.auth) {
-    alert("Secure admin login is not available right now.");
-    return;
-  }
-
-  els.adminUnlock.disabled = true;
-  els.adminUnlock.textContent = "Sending Link...";
-
-  try {
-    const { error } = await state.supabase.client.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.href
-      }
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    if (els.adminAuthNote) {
-      els.adminAuthNote.textContent = `Secure login link sent to ${email}. Open it on this same device to unlock Admin.`;
-    }
-  } catch (error) {
-    alert(`Could not send secure login link: ${formatSupabaseError(error)}`);
-  } finally {
-    els.adminUnlock.disabled = false;
-    els.adminUnlock.textContent = isLocalPreview() ? "Open Local Admin" : "Send Secure Login Link";
-  }
-}
-
-function unlockLocalAdminPreview() {
-  if (!isLocalPreview()) {
-    alert("Local preview password is only available on localhost or file preview.");
+  if (!ADMIN_PASSWORD) {
+    alert("Admin password is not configured for this deployment yet.");
     return;
   }
 
   if (els.adminPassword.value !== ADMIN_PASSWORD) {
-    alert("Wrong local preview password.");
+    alert("Wrong admin password. Please try again.");
     return;
   }
 
-  unlockAdminUi("local");
+  unlockAdminUi("password");
+}
+
+function unlockLocalAdminPreview() {
+  return unlockAdmin();
 }
 
 async function signOutAdmin() {
-  if (state.supabase.ready && state.supabase.client && state.supabase.client.auth) {
-    await state.supabase.client.auth.signOut();
-  }
   lockAdminUi();
 }
 
@@ -2558,10 +2483,6 @@ function formatRelativeOrderTime(dateValue) {
 }
 
 async function getAdminOrdersFromSupabase() {
-  if (!hasSecureAdminSession()) {
-    throw new Error("Secure admin sign-in is required.");
-  }
-
   const { data, error } = await state.supabase.client
     .from(SUPABASE_CONFIG.ordersTable)
     .select("*")
@@ -2598,10 +2519,6 @@ async function handleAdminOrderAction(button) {
   button.disabled = true;
 
   try {
-    if (source === "supabase" && !canManageCloudAdminData()) {
-      throw new Error("Sign in with the approved admin email to update cloud orders.");
-    }
-
     if (state.supabase.ready && source === "supabase" && canManageCloudAdminData()) {
       if (action === "deliver") {
         const { error } = await state.supabase.client

@@ -18,13 +18,11 @@ A single-page static HTML/CSS/JS digital product store for ThesHubHub.
 
 ## Admin
 
-Public admin is now protected with Supabase email sign-in for:
+Admin now uses a password-only system:
 
 ```text
-theshubhub@gmail.com
+admin123
 ```
-
-The old `admin123` password is now limited to local `file://` or localhost preview only.
 
 Product edits and hidden cards still live in this browser with localStorage.
 
@@ -60,7 +58,17 @@ Before cloud orders will work, run the SQL in [supabase-setup.sql](C:/Users/Lene
 - `store-assets` storage bucket for the payment QR image
 - public anon policies needed by this frontend-only build
 
-Important: re-run the SQL in [supabase-setup.sql](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/supabase-setup.sql). It now locks cloud admin actions behind Supabase Auth, keeps payment screenshots private, and leaves only public customer checkout actions open.
+Important: re-run the SQL in [supabase-setup.sql](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/supabase-setup.sql). It now matches the password-only admin flow again, which is easier to use but less secure than a real authenticated backend.
+
+## Environment Config
+
+Use [.env.example](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/thesubhubstore/.env.example) as your template for Vercel or Netlify environment variables.
+
+Important:
+
+- `DISCORD_WEBHOOK_URL` and `SITE_URL` are proper server-side env values.
+- `ADMIN_PASSWORD` is injected into browser code at build time, so it is not truly secret on a public static site.
+- `PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `PUBLIC_SUPABASE_URL`, `PUBLIC_STORE_EMAIL`, and `PUBLIC_FORMSUBMIT_URL` are public config values, not secrets.
 
 ## Publish
 

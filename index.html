@@ -6,6 +6,16 @@
     <meta name="description" content="ThesHubHub digital product and top-up store for PUBG UC, MLBB Diamonds, Spotify, Netflix, Discord Nitro, and giftcards.">
     <title>ThesHubHub Digital Store</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Build-time config injection -->
+    <script>
+      window.ThesHubHubConfig = {
+        adminPassword: "%ADMIN_PASSWORD%",
+        storeEmail: "%PUBLIC_STORE_EMAIL%",
+        formSubmitUrl: "%PUBLIC_FORMSUBMIT_URL%",
+        supabaseUrl: "%PUBLIC_SUPABASE_URL%",
+        supabasePublishableKey: "%PUBLIC_SUPABASE_PUBLISHABLE_KEY%"
+      };
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -266,25 +276,21 @@
           <section class="admin-section section-view hidden" data-section="admin">
             <div class="section-heading">
               <div>
-                <p class="eyebrow">Secure admin</p>
+                <p class="eyebrow">Password admin</p>
                 <h2>Admin Panel</h2>
               </div>
-              <span class="section-pill">Protected admin access</span>
+              <span class="section-pill">Password-only access</span>
             </div>
 
             <div class="admin-login panel" id="adminLogin">
-              <label id="adminEmailField">
-                Admin Email
-                <input id="adminEmail" type="email" autocomplete="email" placeholder="theshubhub@gmail.com">
-              </label>
-              <button class="button primary" id="adminUnlock" type="button">Send Secure Login Link</button>
-              <div class="local-admin hidden" id="localAdminLogin">
+              <div class="local-admin" id="localAdminLogin">
                 <label>
-                  Local Preview Password
-                  <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter local preview password">
+                  Admin Password
+                  <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password">
                 </label>
+                <button class="button primary" id="adminUnlockPassword" type="button">Unlock Admin Panel</button>
               </div>
-              <p class="form-note" id="adminAuthNote">Public admin now uses Supabase email sign-in. The old password is only available in local preview.</p>
+              <p class="form-note" id="adminAuthNote">Enter your admin password to access the admin panel.</p>
             </div>
 
             <div class="admin-tools hidden" id="adminTools">
