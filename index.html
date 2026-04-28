@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="ThesHubHub digital product and top-up store for PUBG UC, MLBB Diamonds, Spotify, Netflix, Discord Nitro, and giftcards.">
+    <title>ThesHubHub Digital Store</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Store navigation">
+        <div class="brand" aria-label="ThesHubHub">
+          <span class="brand-mark">TH</span>
+          <span>
+            <strong>ThesHubHub</strong>
+            <small>Digital Store</small>
+          </span>
+        </div>
+        <nav class="side-nav">
+          <button class="nav-link active" data-view="home">Home</button>
+          <button class="nav-link" data-view="pubg">PUBG UC</button>
+          <button class="nav-link" data-view="mlbb">MLBB Diamonds</button>
+          <button class="nav-link" data-view="spotify">Spotify</button>
+          <button class="nav-link" data-view="netflix">Netflix Plans</button>
+          <button class="nav-link" data-view="orders">My Orders</button>
+          <button class="nav-link" data-view="admin">Admin</button>
+        </nav>
+      </aside>
+
+      <div class="content-shell">
+        <header class="mobile-header">
+          <div class="brand" aria-label="ThesHubHub">
+            <span class="brand-mark">TH</span>
+            <span>
+              <strong>ThesHubHub</strong>
+              <small>Digital Store</small>
+            </span>
+          </div>
+        </header>
+
+        <main>
+          <section class="hero section-view" data-section="home">
+            <div class="hero-copy">
+              <p class="eyebrow">Nepal digital top-up shop</p>
+              <h1>Top up games, streaming, and giftcards in one clean place.</h1>
+              <p>Choose a plan, upload your payment screenshot, and track your order locally while the request is emailed to ThesHubHub.</p>
+              <div class="hero-actions">
+                <button class="button primary" data-view="pubg">Shop PUBG UC</button>
+                <button class="button ghost" data-view="orders">View Orders</button>
+              </div>
+              <p class="disclaimer">Logo-style artwork is original UI art for product identification. ThesHubHub does not claim official partnership with PUBG, Mobile Legends, Spotify, Netflix, Discord, Steam, Codashop, Midasbuy, or MobaPay.</p>
+            </div>
+            <div class="hero-panel" aria-label="Featured products">
+              <div class="hero-card hero-card-gold">
+                <img class="hero-thumb" src="assets/pubg-uc-product.png" alt="PUBG UC featured product">
+                <div>
+                  <strong>8100 UC</strong>
+                  <small>Rs 14500</small>
+                </div>
+              </div>
+              <div class="hero-card hero-card-blue">
+                <img class="hero-thumb" src="assets/mlbb-product.png" alt="MLBB Diamonds featured product">
+                <div>
+                  <strong>5532 Diamonds</strong>
+                  <small>NPR 12800</small>
+                </div>
+              </div>
+              <div class="hero-card hero-card-red">
+                <img class="hero-thumb" src="assets/netflix-product.png" alt="Netflix featured product">
+                <div>
+                  <strong>Netflix</strong>
+                  <small>From NPR 449</small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="store-section section-view" data-section="pubg">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Game top-up</p>
+                <h2>PUBG UC</h2>
+              </div>
+              <span class="section-pill">Golden UC coin cards</span>
+            </div>
+            <div class="product-grid" data-products="pubg"></div>
+          </section>
+
+          <section class="store-section section-view" data-section="mlbb">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Game top-up</p>
+                <h2>MLBB Diamonds</h2>
+              </div>
+              <span class="section-pill">Blue diamond badge cards</span>
+            </div>
+            <div class="product-grid" data-products="mlbb"></div>
+          </section>
+
+          <section class="store-section section-view" data-section="spotify">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Streaming</p>
+                <h2>Spotify Premium</h2>
+              </div>
+              <span class="section-pill">Music plan cards</span>
+            </div>
+            <div class="product-grid" data-products="spotify"></div>
+          </section>
+
+          <section class="store-section section-view" data-section="netflix">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Streaming</p>
+                <h2>Netflix Plans</h2>
+              </div>
+              <span class="section-pill">Single N logo cards</span>
+            </div>
+            <div class="product-grid" data-products="netflix"></div>
+          </section>
+
+          <section class="store-section section-view home-extra" data-section="home-extra">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">More digital goods</p>
+                <h2>Discord Nitro / Giftcards</h2>
+              </div>
+              <span class="section-pill">Nitro and editable giftcard prices</span>
+            </div>
+            <div class="product-grid" data-products="discord"></div>
+          </section>
+
+          <section class="checkout-panel section-view hidden" data-section="checkout" id="checkout">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Secure checkout</p>
+                <h2>Complete Checkout</h2>
+              </div>
+              <span class="section-pill">Status starts as Pending</span>
+            </div>
+
+            <div class="checkout-layout">
+              <form class="checkout-form panel" id="checkoutForm" name="theshubhub-orders" action="https://formsubmit.co/theshubhub@gmail.com" method="POST" enctype="multipart/form-data" target="formSubmitFrame" data-netlify="true" netlify-honeypot="bot-field">
+                <input type="hidden" name="form-name" value="theshubhub-orders">
+                <p class="hidden">
+                  <label>Do not fill this out <input name="bot-field"></label>
+                </p>
+                <input type="hidden" name="_subject" value="New ThesHubHub Order">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="_template" value="table">
+                <input type="hidden" name="order_id" id="emailOrderId">
+                <input type="hidden" name="status" value="Pending">
+                <input type="hidden" name="category_label" id="emailCategoryLabel">
+                <input type="hidden" name="product_name" id="emailProductName">
+                <input type="hidden" name="price" id="emailPrice">
+
+                <label>
+                  Category
+                  <select name="category" id="checkoutCategory" required></select>
+                </label>
+                <label>
+                  Product / Plan
+                  <select name="plan" id="checkoutProduct" required></select>
+                </label>
+                <div class="field-grid">
+                  <label>
+                    Full Name
+                    <input name="customer_name" id="customerName" type="text" autocomplete="name" required>
+                  </label>
+                  <label>
+                    Phone / WhatsApp
+                    <input name="phone" id="phone" type="tel" autocomplete="tel" required>
+                  </label>
+                </div>
+                <label>
+                  Email
+                  <input name="email" id="email" type="email" autocomplete="email" required>
+                </label>
+                <div class="conditional-fields" id="pubgFields">
+                  <label>
+                    PUBG UID
+                    <input name="pubg_uid" id="pubgUid" type="text" inputmode="numeric">
+                  </label>
+                </div>
+                <div class="conditional-fields" id="mlbbFields">
+                  <div class="field-grid">
+                    <label>
+                      MLBB User ID
+                      <input name="mlbb_user_id" id="mlbbUserId" type="text" inputmode="numeric">
+                    </label>
+                    <label>
+                      MLBB Region ID
+                      <input name="mlbb_region_id" id="mlbbRegionId" type="text" inputmode="numeric">
+                    </label>
+                  </div>
+                </div>
+                <label>
+                  Order Note <span>Optional</span>
+                  <textarea name="note" id="note" rows="3"></textarea>
+                </label>
+                <label>
+                  Payment Screenshot
+                  <input name="attachment" id="paymentScreenshot" type="file" accept="image/*" required>
+                </label>
+                <div class="coupon-row">
+                  <label>
+                    Coupon Code
+                    <input name="coupon_code" id="couponCode" type="text" placeholder="WELCOME10">
+                  </label>
+                  <button class="button ghost" id="applyCoupon" type="button">Apply</button>
+                </div>
+                <div class="checkout-summary panel-soft" id="checkoutSummary">
+                  <div><span>Original Price</span><strong id="summaryOriginal">-</strong></div>
+                  <div><span>Discount</span><strong id="summaryDiscount">-</strong></div>
+                  <div><span>Total</span><strong id="summaryTotal">-</strong></div>
+                  <p class="form-note" id="couponStatus">Add a coupon code if you have one.</p>
+                </div>
+                <p class="form-note">Payment screenshot files are emailed through FormSubmit. Only the filename is saved in this browser.</p>
+                <button class="button primary full" type="submit">Complete Checkout</button>
+              </form>
+
+              <aside class="payment-card panel">
+                <p class="eyebrow">Payment settings</p>
+                <h3>Pay before checkout</h3>
+                <dl>
+                  <div>
+                    <dt>Wallet ID</dt>
+                    <dd id="payWallet">Not set</dd>
+                  </div>
+                  <div>
+                    <dt>Bank Name</dt>
+                    <dd id="payBank">Not set</dd>
+                  </div>
+                  <div>
+                    <dt>Account Number</dt>
+                    <dd id="payAccount">Not set</dd>
+                  </div>
+                </dl>
+                <div class="qr-box" id="qrBox">
+                  <span>No QR uploaded yet</span>
+                </div>
+                <p class="form-note">FormSubmit may require first-time email activation. If email does not arrive, check Spam/Promotions and click the FormSubmit activation email.</p>
+              </aside>
+            </div>
+            <iframe class="hidden-frame" name="formSubmitFrame" title="FormSubmit delivery frame"></iframe>
+          </section>
+
+          <section class="orders-section section-view hidden" data-section="orders">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Order history</p>
+                <h2>My Orders</h2>
+              </div>
+              <input class="search-input" id="orderSearch" type="search" placeholder="Search orders">
+            </div>
+            <div class="tabs" role="tablist" aria-label="Order status filters">
+              <button class="tab active" data-status="all">All</button>
+              <button class="tab" data-status="Pending">Pending</button>
+              <button class="tab" data-status="Completed">Completed</button>
+              <button class="tab" data-status="Refunded">Refunded</button>
+            </div>
+            <div class="orders-list" id="ordersList"></div>
+          </section>
+
+          <section class="admin-section section-view hidden" data-section="admin">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Secure admin</p>
+                <h2>Admin Panel</h2>
+              </div>
+              <span class="section-pill">Protected admin access</span>
+            </div>
+
+            <div class="admin-login panel" id="adminLogin">
+              <label id="adminEmailField">
+                Admin Email
+                <input id="adminEmail" type="email" autocomplete="email" placeholder="theshubhub@gmail.com">
+              </label>
+              <button class="button primary" id="adminUnlock" type="button">Send Secure Login Link</button>
+              <div class="local-admin hidden" id="localAdminLogin">
+                <label>
+                  Local Preview Password
+                  <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter local preview password">
+                </label>
+              </div>
+              <p class="form-note" id="adminAuthNote">Public admin now uses Supabase email sign-in. The old password is only available in local preview.</p>
+            </div>
+
+            <div class="admin-tools hidden" id="adminTools">
+              <div class="admin-grid">
+                <form class="panel admin-card" id="addProductForm">
+                  <h3>Add Product</h3>
+                  <label>
+                    Category
+                    <select name="category" required></select>
+                  </label>
+                  <label>
+                    Name
+                    <input name="name" type="text" required>
+                  </label>
+                  <label>
+                    Price
+                    <input name="price" type="text" required>
+                  </label>
+                  <label>
+                    Description
+                    <textarea name="description" rows="3"></textarea>
+                  </label>
+                  <button class="button primary full" type="submit">Add Product</button>
+                </form>
+
+                <form class="panel admin-card" id="editProductForm">
+                  <h3>Edit / Remove Product</h3>
+                  <label>
+                    Select Product
+                    <select name="product" id="adminProductSelect"></select>
+                  </label>
+                  <label>
+                    Edit Name
+                    <input name="name" type="text" required>
+                  </label>
+                  <label>
+                    Edit Price
+                    <input name="price" type="text" required>
+                  </label>
+                  <label>
+                    Edit Description
+                    <textarea name="description" rows="3"></textarea>
+                  </label>
+                  <div class="button-row">
+                    <button class="button primary" type="submit">Save Edit</button>
+                    <button class="button danger" id="removeProduct" type="button">Remove</button>
+                  </div>
+                  <button class="button ghost full" id="restoreProducts" type="button">Restore Removed Cards</button>
+                </form>
+
+                <form class="panel admin-card" id="paymentForm">
+                  <h3>Payment Settings</h3>
+                  <label>
+                    Wallet ID
+                    <input name="wallet" type="text">
+                  </label>
+                  <label>
+                    Bank Name
+                    <input name="bank" type="text">
+                  </label>
+                  <label>
+                    Account Number
+                    <input name="account" type="text">
+                  </label>
+                  <label>
+                    Upload Payment QR
+                    <input name="qr" id="qrUpload" type="file" accept="image/*">
+                  </label>
+                  <div class="button-row">
+                    <button class="button primary" type="submit">Save Payment</button>
+                    <button class="button danger" id="removeQr" type="button">Remove QR</button>
+                  </div>
+                </form>
+
+                <form class="panel admin-card" id="couponForm">
+                  <h3>Coupon Codes</h3>
+                  <label>
+                    Code
+                    <input name="code" type="text" placeholder="WELCOME10" required>
+                  </label>
+                  <div class="field-grid">
+                    <label>
+                      Discount Type
+                      <select name="type" required>
+                        <option value="percent">Percent</option>
+                        <option value="fixed">Fixed Amount</option>
+                      </select>
+                    </label>
+                    <label>
+                      Value
+                      <input name="value" type="number" min="1" step="1" required>
+                    </label>
+                  </div>
+                  <div class="field-grid">
+                    <label>
+                      Category
+                      <select name="category">
+                        <option value="all">All Categories</option>
+                      </select>
+                    </label>
+                    <label>
+                      Status
+                      <select name="active">
+                        <option value="true">Active</option>
+                        <option value="false">Disabled</option>
+                      </select>
+                    </label>
+                  </div>
+                  <button class="button primary full" type="submit">Save Coupon</button>
+                  <div class="admin-coupon-list" id="adminCouponList"></div>
+                </form>
+              </div>
+
+              <div class="panel admin-orders">
+                <div class="admin-orders-head">
+                  <h3>Orders</h3>
+                  <div class="button-row">
+                    <button class="button ghost hidden" id="adminSignOut" type="button">Sign Out</button>
+                    <button class="button ghost" id="enableAdminAlerts" type="button">Enable Alerts</button>
+                    <button class="button ghost" id="refreshAdminOrders" type="button">Refresh</button>
+                    <button class="button danger" id="clearOrders" type="button">Clear Orders</button>
+                  </div>
+                </div>
+                <div class="tabs admin-order-tabs" role="tablist" aria-label="Admin order status filters">
+                  <button class="tab active" data-admin-status="all">All</button>
+                  <button class="tab" data-admin-status="Pending">Pending</button>
+                  <button class="tab" data-admin-status="Completed">Completed</button>
+                  <button class="tab" data-admin-status="Refunded">Refunded</button>
+                </div>
+                <p class="form-note" id="adminOrdersHint">New orders refresh here automatically while Admin is open.</p>
+                <div id="adminOrdersList"></div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <footer class="site-footer">
+          <div class="footer-copy">Stay updated with us</div>
+          <div class="footer-socials" aria-label="Social and contact links">
+            <a class="footer-social" href="https://www.facebook.com/share/1CDoeoaf5z/?mibextid=wwXIfr" target="_blank" rel="noreferrer" aria-label="Facebook">
+              <svg class="footer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 8h3V4h-3c-3 0-5 2-5 5v3H6v4h3v4h4v-4h3.2l.8-4H13V9c0-.7.3-1 1-1Z" fill="currentColor"></path>
+              </svg>
+            </a>
+            <a class="footer-social" href="https://www.instagram.com/thesubhub11/" target="_blank" rel="noreferrer" aria-label="Instagram">
+              <svg class="footer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4.5" y="4.5" width="15" height="15" rx="4.2" ry="4.2" fill="none" stroke="currentColor" stroke-width="2"></rect>
+                <circle cx="12" cy="12" r="3.6" fill="none" stroke="currentColor" stroke-width="2"></circle>
+                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"></circle>
+              </svg>
+            </a>
+            <a class="footer-social" href="mailto:theshubhub@gmail.com" aria-label="Email">
+              <svg class="footer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Zm1.6.4 6.1 4.7a.5.5 0 0 0 .6 0l6.1-4.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </a>
+            <span class="footer-social disabled" aria-label="WhatsApp coming soon">
+              <svg class="footer-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4.5a7.5 7.5 0 0 0-6.5 11.2L4.7 19.3l3.8-.8A7.5 7.5 0 1 0 12 4.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
+                <path d="M9.6 9.1c.2-.4.4-.4.6-.4h.5c.2 0 .4 0 .5.4l.5 1.3c.1.2 0 .4-.1.6l-.4.5c.6 1 1.5 1.7 2.5 2.2l.5-.5c.2-.2.4-.2.6-.1l1.3.5c.3.1.4.3.4.5v.5c0 .2 0 .4-.4.6-.3.2-.9.4-1.5.3-1.1-.1-2.5-.9-3.7-2.1-1.1-1.1-2-2.5-2.1-3.7-.1-.6.1-1.2.3-1.5Z" fill="currentColor"></path>
+              </svg>
+            </span>
+          </div>
+        </footer>
+
+        <div class="admin-toast hidden" id="adminToast" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <template id="productCardTemplate">
+      <article class="product-card">
+        <div class="product-art"></div>
+        <div class="product-info">
+          <div class="product-tags"></div>
+          <h3></h3>
+          <p></p>
+          <div class="product-foot">
+            <strong></strong>
+            <button class="button buy-button" type="button">Buy Now</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <div class="product-modal hidden" id="productModal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+      <div class="product-modal-backdrop" data-close-modal="true"></div>
+      <div class="product-modal-panel">
+        <button class="modal-close" id="closeProductModal" type="button" aria-label="Close product details">x</button>
+        <div class="product-modal-art" id="productModalArt"></div>
+        <div class="product-modal-copy">
+          <p class="eyebrow" id="productModalCategory">Product details</p>
+          <h3 id="productModalTitle"></h3>
+          <p id="productModalDescription"></p>
+          <div class="modal-meta">
+            <div><span>Price</span><strong id="productModalPrice"></strong></div>
+            <div><span>Delivery Time</span><strong id="productModalDelivery"></strong></div>
+          </div>
+          <div class="modal-block">
+            <h4>Required Info</h4>
+            <p id="productModalRequired"></p>
+          </div>
+          <div class="modal-block">
+            <h4>Refund Policy</h4>
+            <p id="productModalRefund"></p>
+          </div>
+          <div class="modal-block">
+            <h4>Before Checkout</h4>
+            <p id="productModalInstructions"></p>
+          </div>
+          <button class="button primary" id="modalBuyNow" type="button">Buy Now</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <div class="purchase-popup hidden" id="purchasePopup" aria-live="polite"></div>
+  </body>
+</html>
