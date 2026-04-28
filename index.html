@@ -505,6 +505,84 @@
       </div>
     </div>
 
+    <div class="invoice-modal hidden" id="invoiceModal" role="dialog" aria-modal="true" aria-labelledby="invoiceTitle">
+      <div class="product-modal-backdrop" data-close-invoice="true"></div>
+      <div class="invoice-modal-panel">
+        <button class="modal-close" id="closeInvoiceModal" type="button" aria-label="Close invoice">x</button>
+        <div class="invoice-sheet" id="invoiceSheet">
+          <div class="invoice-head">
+            <div>
+              <p class="eyebrow">Invoice</p>
+              <h3 id="invoiceTitle">Thesubhub Order Invoice</h3>
+            </div>
+            <div class="invoice-brand">
+              <span class="brand-mark">TH</span>
+              <div>
+                <strong>Thesubhub</strong>
+                <small>Digital Store</small>
+              </div>
+            </div>
+          </div>
+          <div class="invoice-status-row">
+            <span class="invoice-status" id="invoiceStatusBadge">Pending</span>
+            <span class="invoice-sync" id="invoiceSyncBadge">Browser Saved</span>
+          </div>
+          <div class="invoice-grid">
+            <div class="invoice-card">
+              <span>Order ID</span>
+              <strong id="invoiceOrderId">-</strong>
+            </div>
+            <div class="invoice-card">
+              <span>Date</span>
+              <strong id="invoiceDate">-</strong>
+            </div>
+            <div class="invoice-card">
+              <span>Customer</span>
+              <strong id="invoiceCustomer">-</strong>
+            </div>
+            <div class="invoice-card">
+              <span>Phone / WhatsApp</span>
+              <strong id="invoicePhone">-</strong>
+            </div>
+          </div>
+          <div class="invoice-line-items">
+            <div class="invoice-line-head">
+              <span>Product</span>
+              <span>Total</span>
+            </div>
+            <div class="invoice-line-item">
+              <div>
+                <strong id="invoiceProduct">-</strong>
+                <p id="invoiceCategory">-</p>
+              </div>
+              <strong id="invoiceTotal">-</strong>
+            </div>
+          </div>
+          <div class="invoice-grid invoice-grid-secondary">
+            <div class="invoice-card">
+              <span>Email</span>
+              <strong id="invoiceEmail">-</strong>
+            </div>
+            <div class="invoice-card">
+              <span>Payment Screenshot</span>
+              <strong id="invoiceScreenshot">-</strong>
+            </div>
+          </div>
+          <div class="invoice-card hidden" id="invoiceGameCard">
+            <span>Game ID Details</span>
+            <strong id="invoiceGameIds">-</strong>
+          </div>
+          <div class="invoice-card hidden" id="invoiceNoteCard">
+            <span>Order Note</span>
+            <strong id="invoiceNote">-</strong>
+          </div>
+          <div class="invoice-footer-note">
+            Thank you for shopping with Thesubhub. Keep this invoice for your order reference and support updates.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
     <div class="purchase-popup hidden" id="purchasePopup" aria-live="polite"></div>

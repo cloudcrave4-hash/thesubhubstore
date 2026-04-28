@@ -206,6 +206,25 @@ function cacheElements() {
   els.productModalRefund = document.querySelector("#productModalRefund");
   els.productModalInstructions = document.querySelector("#productModalInstructions");
   els.modalBuyNow = document.querySelector("#modalBuyNow");
+  els.invoiceModal = document.querySelector("#invoiceModal");
+  els.closeInvoiceModal = document.querySelector("#closeInvoiceModal");
+  els.invoiceSheet = document.querySelector("#invoiceSheet");
+  els.invoiceTitle = document.querySelector("#invoiceTitle");
+  els.invoiceStatusBadge = document.querySelector("#invoiceStatusBadge");
+  els.invoiceSyncBadge = document.querySelector("#invoiceSyncBadge");
+  els.invoiceOrderId = document.querySelector("#invoiceOrderId");
+  els.invoiceDate = document.querySelector("#invoiceDate");
+  els.invoiceCustomer = document.querySelector("#invoiceCustomer");
+  els.invoicePhone = document.querySelector("#invoicePhone");
+  els.invoiceProduct = document.querySelector("#invoiceProduct");
+  els.invoiceCategory = document.querySelector("#invoiceCategory");
+  els.invoiceTotal = document.querySelector("#invoiceTotal");
+  els.invoiceEmail = document.querySelector("#invoiceEmail");
+  els.invoiceScreenshot = document.querySelector("#invoiceScreenshot");
+  els.invoiceGameCard = document.querySelector("#invoiceGameCard");
+  els.invoiceGameIds = document.querySelector("#invoiceGameIds");
+  els.invoiceNoteCard = document.querySelector("#invoiceNoteCard");
+  els.invoiceNote = document.querySelector("#invoiceNote");
   els.purchasePopup = document.querySelector("#purchasePopup");
 }
 
@@ -224,6 +243,12 @@ function bindEvents() {
     const buyAgain = event.target.closest("[data-buy-again]");
     if (buyAgain) {
       startCheckout(buyAgain.dataset.buyAgain);
+    }
+
+    const invoiceAction = event.target.closest("[data-order-invoice]");
+    if (invoiceAction) {
+      openInvoiceModal(invoiceAction.dataset.orderInvoice);
+      return;
     }
 
     const adminAction = event.target.closest("[data-admin-order]");
@@ -246,6 +271,12 @@ function bindEvents() {
     const modalClose = event.target.closest("[data-close-modal]");
     if (modalClose) {
       closeProductModal();
+      return;
+    }
+
+    const invoiceClose = event.target.closest("[data-close-invoice]");
+    if (invoiceClose) {
+      closeInvoiceModal();
       return;
     }
 
@@ -349,6 +380,9 @@ function bindEvents() {
   if (els.closeProductModal) {
     els.closeProductModal.addEventListener("click", closeProductModal);
   }
+  if (els.closeInvoiceModal) {
+    els.closeInvoiceModal.addEventListener("click", closeInvoiceModal);
+  }
   if (els.modalBuyNow) {
     els.modalBuyNow.addEventListener("click", () => {
       if (state.selectedProductId) {
@@ -360,6 +394,9 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && els.productModal && !els.productModal.classList.contains("hidden")) {
       closeProductModal();
+    }
+    if (event.key === "Escape" && els.invoiceModal && !els.invoiceModal.classList.contains("hidden")) {
+      closeInvoiceModal();
     }
   });
   ["click", "keydown", "pointerdown", "touchstart"].forEach((eventName) => {
@@ -902,6 +939,49 @@ function closeProductModal() {
 
   els.productModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+}
+
+function openInvoiceModal(orderId) {
+  const order = getLocalOrders().find((item) => item.id === orderId);
+  if (!order || !els.invoiceModal) {
+    showNotification("error", "Invoice Not Found", "We could not find that invoice in your local order history.");
+    return;
+  }
+
+  populateInvoiceModal(order);
+  els.invoiceModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+function closeInvoiceModal() {
+  if (!els.invoiceModal) {
+    return;
+  }
+  els.invoiceModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function populateInvoiceModal(order) {
+  const status = normalizeOrderStatus(order.status);
+  const gameIds = getGameIdLine(order);
+  els.invoiceTitle.textContent = `Thesubhub Invoice - ${order.id}`;
+  els.invoiceStatusBadge.textContent = status;
+  els.invoiceStatusBadge.className = `invoice-status ${status}`;
+  els.invoiceSyncBadge.textContent = getSyncBadgeLabel(order);
+  els.invoiceOrderId.textContent = order.id || "-";
+  els.invoiceDate.textContent = new Date(order.createdAt || Date.now()).toLocaleString();
+  els.invoiceCustomer.textContent = order.customerName || "-";
+  els.invoicePhone.textContent = order.phone || "-";
+  els.invoiceProduct.textContent = order.plan || "-";
+  els.invoiceCategory.textContent = order.categoryLabel || "-";
+  els.invoiceTotal.textContent = order.price || "-";
+  els.invoiceEmail.textContent = order.email || "-";
+  els.invoiceScreenshot.textContent = order.screenshotFilename || "Not attached";
+  els.invoiceGameIds.textContent = gameIds || "-";
+  els.invoiceNote.textContent = order.note || "-";
+  els.invoiceGameCard.classList.toggle("hidden", !gameIds);
+  els.invoiceNoteCard.classList.toggle("hidden", !order.note);
+  els.invoiceSheet.dataset.orderId = order.id || "";
 }
 
 function parsePrice(price) {
@@ -1757,15 +1837,16 @@ function createOrderCard(order, options = {}) {
       <div><span>Total</span><strong>${escapeHtml(order.price || "N/A")}</strong></div>
       <div><span>Screenshot</span><strong>${escapeHtml(order.screenshotFilename || "N/A")}</strong></div>
     </div>
-    ${order.couponCode ? `<p class="form-note">Coupon used: ${escapeHtml(order.couponCode)}</p>` : ""}
-    ${gameIds ? `<p class="form-note">${gameIds}</p>` : ""}
-    ${screenshotLink}
-    ${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}
-    <div class="button-row">
-      <button class="button ghost" type="button" data-buy-again="${escapeHtml(order.productId)}">Buy Again</button>
-      ${options.admin ? `<button class="button primary" type="button" data-admin-order="deliver" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Delivered</button><button class="button ghost" type="button" data-admin-order="refund" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Refunded</button><button class="button danger" type="button" data-admin-order="delete" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Delete</button>` : ""}
-    </div>
-  `;
+      ${order.couponCode ? `<p class="form-note">Coupon used: ${escapeHtml(order.couponCode)}</p>` : ""}
+      ${gameIds ? `<p class="form-note">${gameIds}</p>` : ""}
+      ${screenshotLink}
+      ${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}
+      <div class="button-row">
+        ${!options.admin ? `<button class="button primary" type="button" data-order-invoice="${idHtml}">View Invoice</button>` : ""}
+        <button class="button ghost" type="button" data-buy-again="${escapeHtml(order.productId)}">Buy Again</button>
+        ${options.admin ? `<button class="button primary" type="button" data-admin-order="deliver" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Delivered</button><button class="button ghost" type="button" data-admin-order="refund" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Refunded</button><button class="button danger" type="button" data-admin-order="delete" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Delete</button>` : ""}
+      </div>
+    `;
   return card;
 }
 
