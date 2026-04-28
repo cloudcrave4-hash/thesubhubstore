@@ -1682,7 +1682,7 @@ function showOrderEmailNotice(order, syncSummary) {
 }
 
 function createOrderMailto(order) {
-  const subject = encodeURIComponent(`ThesHubHub Order ${order.id}`);
+  const subject = encodeURIComponent(`Thesubhub Order ${order.id}`);
   const body = encodeURIComponent([
     `Order ID: ${order.id}`,
     `Status: ${order.status}`,
@@ -2482,7 +2482,7 @@ function processAdminOrderNotifications(orders) {
       ? `${latestOrder.customerName || "Customer"} ordered ${latestOrder.plan}`
       : "Open Admin Panel to review the new orders.";
     try {
-      const notification = new Notification("ThesHubHub Admin", {
+      const notification = new Notification("Thesubhub Admin", {
         body: detail,
         tag: "theshubhub-admin-orders"
       });
@@ -2572,7 +2572,7 @@ async function requestAdminNotificationPermission() {
   if (permission === "granted") {
     showAdminToast("Admin browser alerts enabled.");
     try {
-      const notification = new Notification("ThesHubHub Admin", {
+      const notification = new Notification("Thesubhub Admin", {
         body: "You will now be notified when new orders arrive while this admin page is open.",
         tag: "theshubhub-admin-ready"
       });
@@ -2948,7 +2948,7 @@ function runSmokeTests() {
   prepareCheckout(firstProduct.category, firstProduct.id);
   refreshPurchasePopupMessages();
 
-  console.groupCollapsed("ThesHubHub smoke tests");
+  console.groupCollapsed("Thesubhub smoke tests");
   console.assert(document.querySelectorAll(".product-card").length > 0, "product rendering: expected visible product cards");
   console.assert(els.checkoutCategory.options.length === 1 && els.checkoutCategory.value === firstProduct.category, "checkout auto-selection: expected selected category only");
   console.assert(els.checkoutProduct.value === firstProduct.id, "checkout auto-selection: expected selected product");
