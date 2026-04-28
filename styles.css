@@ -817,6 +817,18 @@ p {
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38);
 }
 
+.discord-product-image {
+  position: absolute;
+  inset: 4px;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  border: 1px solid rgba(216, 180, 254, 0.28);
+  border-radius: 22px;
+  object-fit: cover;
+  object-position: center top;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38);
+}
+
 .screen-card {
   position: absolute;
   display: grid;

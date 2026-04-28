@@ -1,11 +1,11 @@
+const { isAllowedOrigin } = require("../lib/admin-auth");
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const allowedOrigin = normalizeOrigin(process.env.SITE_URL);
-  const requestOrigin = normalizeOrigin(req.headers.origin || "");
-  if (allowedOrigin && requestOrigin && allowedOrigin !== requestOrigin) {
+  if (!isAllowedOrigin(req)) {
     return res.status(403).json({ error: "Origin not allowed" });
   }
 
@@ -100,12 +100,4 @@ function buildScreenshotValue(payload) {
   }
 
   return payload.screenshotFilename || "N/A";
-}
-
-function normalizeOrigin(value) {
-  try {
-    return new URL(String(value || "").trim()).origin;
-  } catch (error) {
-    return "";
-  }
 }

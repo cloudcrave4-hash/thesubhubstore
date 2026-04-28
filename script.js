@@ -768,11 +768,7 @@ function createProductLogo(product) {
   }
 
   logo.innerHTML = `
-    <span class="nitro-badge">
-      <span class="nitro-spark left"></span>
-      <span class="nitro-core">N</span>
-      <span class="nitro-spark right"></span>
-    </span>
+    <img class="discord-product-image" src="assets/discord-nitro-product.png" alt="Discord Nitro product artwork">
     <span class="plan-chip">${getPlanShortName(product.name)}</span>
   `;
   return logo;
