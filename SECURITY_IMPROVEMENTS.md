@@ -41,10 +41,10 @@ Your website has many security best practices already in place:
    - Use signed URLs (24-hour expiration) for admin downloads
    - Never expose direct URLs to customers
 
-2. **Strong Admin Password**
-   - Change the local preview password from "admin123" to something stronger
-   - In production, use Supabase email authentication
-   - Enable MFA on Supabase admin account
+2. **Stronger Admin Protection**
+   - Use a non-default `ADMIN_PASSWORD` in deployment settings
+   - Prefer real backend authentication when you move beyond a static admin panel
+   - Keep admin access limited to trusted operators
 
 3. **Secret Management**
    - Never commit `.env` with real values
@@ -162,8 +162,8 @@ cp site-config.local.example.js site-config.local.js
 ```javascript
 // Open F12 Console and run these to verify no secrets are exposed:
 
-// Should return nothing or empty:
-window.ADMIN_PASSWORD  // Should only be available on localhost
+// Build-time browser config is public in a static site:
+window.ThesHubHubConfig?.adminPassword  // Treat as visible to the client
 localStorage.toString().includes("supabase")  // Should be false
 sessionStorage.toString().includes("webhook")  // Should be false
 
@@ -196,7 +196,7 @@ sessionStorage.toString().includes("webhook")  // Should be false
 
 - [ ] Read SECURITY.md for policies
 - [ ] Follow DEPLOYMENT_CHECKLIST.md for deployment
-- [ ] Change local admin password (currently "admin123")
+- [ ] Rotate `ADMIN_PASSWORD` to a unique value for production
 - [ ] Add environment variables to Netlify
 - [ ] Test using checklist
 - [ ] Monitor monthly per security.md guidelines

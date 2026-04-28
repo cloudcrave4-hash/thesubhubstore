@@ -29,9 +29,9 @@ SITE_URL=<your-netlify-domain>
 ## Admin Authentication
 
 ### Current Implementation
-- Uses Supabase email sign-in: `theshubhub@gmail.com`
-- Fallback to `admin123` for local `file://` and localhost only
-- All admin data stored in browser localStorage (local only, not synced to untrusted origin)
+- Uses password-only admin with build-time config injection
+- Current deployed fallback password: `admin555`
+- All admin data still depends on frontend trust, so this is convenient but not high-security
 
 ### To Enhance Further
 1. **Enable MFA** in Supabase settings

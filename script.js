@@ -1,5 +1,8 @@
 const APP_CONFIG = window.ThesHubHubConfig || {};
 const DEFAULT_ADMIN_PASSWORD = "admin555";
+const ADMIN_MAX_FAILED_ATTEMPTS = 5;
+const ADMIN_LOCKOUT_MS = 60 * 1000;
+const ADMIN_INACTIVITY_MS = 10 * 60 * 1000;
 const STORE_EMAIL = readPublicConfig("storeEmail", "theshubhub@gmail.com");
 const FORM_SUBMIT_URL = readPublicConfig("formSubmitUrl", `https://formsubmit.co/${STORE_EMAIL}`);
 const ADMIN_PASSWORD = readSensitiveConfig("adminPassword", DEFAULT_ADMIN_PASSWORD);
@@ -102,6 +105,9 @@ const state = {
   adminTitleOriginal: document.title,
   adminUser: null,
   adminAuthMode: "none",
+  adminFailedAttempts: 0,
+  adminCooldownUntil: 0,
+  adminInactivityTimer: null,
   purchasePopupTimer: null,
   purchasePopupMessages: [],
   purchasePopupIndex: 0,
@@ -296,10 +302,14 @@ function bindEvents() {
 
   if (els.adminUnlockPassword) {
     els.adminUnlockPassword.addEventListener("click", () => {
-      if (els.adminPassword && els.adminPassword.value === ADMIN_PASSWORD) {
-        unlockAdminUi("local");
-      } else {
-        alert("Wrong admin password. Please try again.");
+      void unlockAdmin();
+    });
+  }
+  if (els.adminPassword) {
+    els.adminPassword.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        void unlockAdmin();
       }
     });
   }
@@ -351,6 +361,11 @@ function bindEvents() {
       closeProductModal();
     }
   });
+  ["click", "keydown", "pointerdown", "touchstart"].forEach((eventName) => {
+    document.addEventListener(eventName, () => {
+      noteAdminActivity();
+    }, { passive: true });
+  });
 }
 
 function initializeSupabase() {
@@ -400,7 +415,7 @@ function configureAdminLoginUi() {
   }
 
   if (els.adminAuthNote) {
-    els.adminAuthNote.textContent = "Enter your admin password to access the admin panel.";
+    els.adminAuthNote.textContent = "Enter your admin password to access the admin panel. The session locks after inactivity.";
   }
 
   if (els.adminSignOut) {
@@ -416,11 +431,20 @@ function unlockAdminUi(mode, user = null) {
   state.adminUnlocked = true;
   state.adminAuthMode = mode;
   state.adminUser = user;
+  state.adminFailedAttempts = 0;
+  state.adminCooldownUntil = 0;
   state.adminHasOrderBaseline = false;
   state.adminKnownOrderIds = new Set();
   els.adminLogin.classList.add("hidden");
   els.adminTools.classList.remove("hidden");
+  if (els.adminSignOut) {
+    els.adminSignOut.classList.remove("hidden");
+  }
+  if (els.adminPassword) {
+    els.adminPassword.value = "";
+  }
   updateAdminAlertButton();
+  resetAdminInactivityTimer();
   startAdminOrdersAutoRefresh();
   void refreshAdminOrders(true);
 }
@@ -429,9 +453,22 @@ function lockAdminUi() {
   state.adminUnlocked = false;
   state.adminAuthMode = "none";
   state.adminUser = null;
+  state.adminHasOrderBaseline = false;
+  state.adminKnownOrderIds = new Set();
   els.adminLogin.classList.remove("hidden");
   els.adminTools.classList.add("hidden");
+  if (els.adminSignOut) {
+    els.adminSignOut.classList.add("hidden");
+  }
+  if (els.adminPassword) {
+    els.adminPassword.value = "";
+  }
+  if (els.adminAuthNote) {
+    els.adminAuthNote.textContent = "Enter your admin password to access the admin panel. The session locks after inactivity.";
+  }
+  stopAdminInactivityTimer();
   stopAdminOrdersAutoRefresh();
+  resetAdminTitle();
 }
 
 function readJson(key, fallback) {
@@ -1034,8 +1071,10 @@ function showView(view) {
 
   if (view === "admin") {
     startAdminOrdersAutoRefresh();
+    noteAdminActivity();
     void refreshAdminOrders();
   } else {
+    stopAdminInactivityTimer();
     stopAdminOrdersAutoRefresh();
   }
 
@@ -1720,11 +1759,25 @@ async function unlockAdmin() {
     return;
   }
 
-  if (els.adminPassword.value !== ADMIN_PASSWORD) {
-    alert("Wrong admin password. Please try again.");
+  const cooldownRemaining = getAdminCooldownRemainingMs();
+  if (cooldownRemaining > 0) {
+    const seconds = Math.ceil(cooldownRemaining / 1000);
+    alert(`Too many failed attempts. Try again in ${seconds} seconds.`);
     return;
   }
 
+  if (els.adminPassword.value !== ADMIN_PASSWORD) {
+    registerFailedAdminAttempt();
+    const remaining = Math.max(0, ADMIN_MAX_FAILED_ATTEMPTS - state.adminFailedAttempts);
+    if (getAdminCooldownRemainingMs() > 0) {
+      alert("Too many failed attempts. Admin login is temporarily locked for 60 seconds.");
+      return;
+    }
+    alert(`Wrong admin password. Please try again. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining before a short lock.`);
+    return;
+  }
+
+  clearAdminFailedAttempts();
   unlockAdminUi("password");
 }
 
@@ -1734,6 +1787,51 @@ function unlockLocalAdminPreview() {
 
 async function signOutAdmin() {
   lockAdminUi();
+}
+
+function getAdminCooldownRemainingMs() {
+  return Math.max(0, state.adminCooldownUntil - Date.now());
+}
+
+function registerFailedAdminAttempt() {
+  state.adminFailedAttempts += 1;
+  if (state.adminFailedAttempts >= ADMIN_MAX_FAILED_ATTEMPTS) {
+    state.adminCooldownUntil = Date.now() + ADMIN_LOCKOUT_MS;
+    state.adminFailedAttempts = 0;
+  }
+}
+
+function clearAdminFailedAttempts() {
+  state.adminFailedAttempts = 0;
+  state.adminCooldownUntil = 0;
+}
+
+function noteAdminActivity() {
+  if (!state.adminUnlocked || state.currentView !== "admin") {
+    return;
+  }
+  resetAdminInactivityTimer();
+}
+
+function resetAdminInactivityTimer() {
+  stopAdminInactivityTimer();
+  if (!state.adminUnlocked) {
+    return;
+  }
+  state.adminInactivityTimer = window.setTimeout(() => {
+    if (!state.adminUnlocked) {
+      return;
+    }
+    lockAdminUi();
+    alert("Admin was locked after inactivity. Enter the password again to continue.");
+  }, ADMIN_INACTIVITY_MS);
+}
+
+function stopAdminInactivityTimer() {
+  if (state.adminInactivityTimer) {
+    window.clearTimeout(state.adminInactivityTimer);
+    state.adminInactivityTimer = null;
+  }
 }
 
 function startAdminOrdersAutoRefresh() {

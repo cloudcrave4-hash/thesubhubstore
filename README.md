@@ -21,8 +21,15 @@ A single-page static HTML/CSS/JS digital product store for ThesHubHub.
 Admin now uses a password-only system:
 
 ```text
-admin123
+admin555
 ```
+
+Admin hardening now includes:
+
+- visible `Sign Out` button
+- Enter-to-unlock support in the password field
+- short cooldown after repeated failed login attempts
+- automatic admin lock after inactivity
 
 Product edits and hidden cards still live in this browser with localStorage.
 
@@ -48,9 +55,9 @@ Frontend is wired to:
 https://rfnfjuwuzihjxgamnyou.supabase.co
 ```
 
-with the provided publishable key in [script.js](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/script.js).
+with the provided publishable key in `script.js`.
 
-Before cloud orders will work, run the SQL in [supabase-setup.sql](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/supabase-setup.sql) inside the Supabase SQL Editor. That file creates:
+Before cloud orders will work, run the SQL in `supabase-setup.sql` inside the Supabase SQL Editor. That file creates:
 
 - `orders` table
 - `store_settings` table
@@ -58,11 +65,11 @@ Before cloud orders will work, run the SQL in [supabase-setup.sql](C:/Users/Lene
 - `store-assets` storage bucket for the payment QR image
 - public anon policies needed by this frontend-only build
 
-Important: re-run the SQL in [supabase-setup.sql](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/supabase-setup.sql). It now matches the password-only admin flow again, which is easier to use but less secure than a real authenticated backend.
+Important: re-run the SQL in `supabase-setup.sql`. It now matches the password-only admin flow again, which is easier to use but less secure than a real authenticated backend.
 
 ## Environment Config
 
-Use [.env.example](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/thesubhubstore/.env.example) as your template for Vercel or Netlify environment variables.
+Use `.env.example` as your template for Vercel or Netlify environment variables.
 
 Important:
 
@@ -86,8 +93,8 @@ The checkout form now includes Netlify Forms detection and a JavaScript submit p
 
 Environment templates added:
 
-- [.env.example](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/.env.example) for Netlify/server-side variables
-- [site-config.local.example.js](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/site-config.local.example.js) for optional local preview config
+- `.env.example` for Netlify/server-side variables
+- `site-config.local.example.js` for optional local preview config
 
 Use real values in your Netlify environment settings or in a local untracked copy such as `site-config.local.js`. Do not commit real secrets.
 
@@ -112,8 +119,9 @@ This Netlify flow keeps your existing Supabase sync and FormSubmit email path. O
 
 Discord alerts are now wired through a Netlify Function:
 
-- function file: [netlify/functions/discord-order.js](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/netlify/functions/discord-order.js)
-- frontend trigger: [script.js](C:/Users/Lenevo/Documents/Codex/2026-04-26/can-you-make-website-publish/script.js)
+- function file: `netlify/functions/discord-order.js`
+- Vercel function file: `api/discord-order.js`
+- frontend trigger: `script.js`
 
 To turn it on safely:
 
