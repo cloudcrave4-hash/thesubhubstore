@@ -1,7 +1,8 @@
 const APP_CONFIG = window.ThesHubHubConfig || {};
+const DEFAULT_ADMIN_PASSWORD = "admin555";
 const STORE_EMAIL = readPublicConfig("storeEmail", "theshubhub@gmail.com");
 const FORM_SUBMIT_URL = readPublicConfig("formSubmitUrl", `https://formsubmit.co/${STORE_EMAIL}`);
-const ADMIN_PASSWORD = readSensitiveConfig("adminPassword", "");
+const ADMIN_PASSWORD = readSensitiveConfig("adminPassword", DEFAULT_ADMIN_PASSWORD);
 
 const NETLIFY_FORM_NAME = "theshubhub-orders";
 const DISCORD_FUNCTION_PATH = "/api/discord-order"; // Vercel route (was /.netlify/functions/discord-order)
