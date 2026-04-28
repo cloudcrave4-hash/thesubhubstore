@@ -70,6 +70,8 @@ Important:
 - `ADMIN_PASSWORD` is injected into browser code at build time, so it is not truly secret on a public static site.
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `PUBLIC_SUPABASE_URL`, `PUBLIC_STORE_EMAIL`, and `PUBLIC_FORMSUBMIT_URL` are public config values, not secrets.
 
+Latest update: Vercel now uses `api/discord-order.js` for Discord alerts.
+
 ## Publish
 
 Upload these files to any static host, such as Netlify Drop, Vercel, or GitHub Pages:
