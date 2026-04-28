@@ -80,6 +80,8 @@ For secure admin login on Vercel, set:
 - `ADMIN_SESSION_SECRET`
 - `SITE_URL`
 
+`SITE_URL` can be your main production URL. The server now also accepts the current Vercel deployment host automatically, so admin login works on the deployed URL you are actually visiting.
+
 Latest update: Vercel now uses `api/discord-order.js` for Discord alerts.
 
 ## Publish
