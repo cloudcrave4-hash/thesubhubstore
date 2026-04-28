@@ -23,15 +23,17 @@ SITE_URL=<your-netlify-domain>
 ### What's SECRET (never expose)
 - Supabase service role key
 - Discord webhook URL
-- Admin credentials
+- `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
 - Database passwords
 
 ## Admin Authentication
 
 ### Current Implementation
-- Uses password-only admin with build-time config injection
-- Current deployed fallback password: `admin555`
-- All admin data still depends on frontend trust, so this is convenient but not high-security
+- Uses Vercel Functions to verify the admin password on the server
+- Uses an HttpOnly secure session cookie for admin access
+- Frontend JavaScript no longer needs the admin password value
+- Some admin-related data flows still depend on frontend trust and broad Supabase access, so this is a strong step forward but not the final security layer
 
 ### To Enhance Further
 1. **Enable MFA** in Supabase settings

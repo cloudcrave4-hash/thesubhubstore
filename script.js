@@ -1,14 +1,15 @@
 const APP_CONFIG = window.ThesHubHubConfig || {};
-const DEFAULT_ADMIN_PASSWORD = "admin555";
 const ADMIN_MAX_FAILED_ATTEMPTS = 5;
 const ADMIN_LOCKOUT_MS = 60 * 1000;
 const ADMIN_INACTIVITY_MS = 10 * 60 * 1000;
 const STORE_EMAIL = readPublicConfig("storeEmail", "theshubhub@gmail.com");
 const FORM_SUBMIT_URL = readPublicConfig("formSubmitUrl", `https://formsubmit.co/${STORE_EMAIL}`);
-const ADMIN_PASSWORD = readSensitiveConfig("adminPassword", DEFAULT_ADMIN_PASSWORD);
 
 const NETLIFY_FORM_NAME = "theshubhub-orders";
 const DISCORD_FUNCTION_PATH = "/api/discord-order"; // Vercel route (was /.netlify/functions/discord-order)
+const ADMIN_LOGIN_PATH = "/api/admin-login";
+const ADMIN_SESSION_PATH = "/api/admin-session";
+const ADMIN_LOGOUT_PATH = "/api/admin-logout";
 
 const SUPABASE_CONFIG = {
   url: readPublicConfig("supabaseUrl", "https://rfnfjuwuzihjxgamnyou.supabase.co"),
@@ -21,14 +22,6 @@ const SUPABASE_CONFIG = {
 };
 
 function readPublicConfig(key, fallback) {
-  const value = String(APP_CONFIG[key] || "").trim();
-  if (!value || /^%[A-Z0-9_]+%$/i.test(value)) {
-    return fallback;
-  }
-  return value;
-}
-
-function readSensitiveConfig(key, fallback) {
   const value = String(APP_CONFIG[key] || "").trim();
   if (!value || /^%[A-Z0-9_]+%$/i.test(value)) {
     return fallback;
@@ -137,6 +130,7 @@ async function initApp() {
   renderAdminCoupons();
   startPurchasePopupLoop();
   bindEvents();
+  await restoreAdminAccess();
   await syncLocalOrdersFromSupabase();
   renderOrders();
   showView("home");
@@ -194,6 +188,7 @@ function cacheElements() {
   els.refreshAdminOrders = document.querySelector("#refreshAdminOrders");
   els.adminOrdersList = document.querySelector("#adminOrdersList");
   els.adminOrdersHint = document.querySelector("#adminOrdersHint");
+  els.notificationStack = document.querySelector("#notificationStack");
   els.adminToast = document.querySelector("#adminToast");
   els.payWallet = document.querySelector("#payWallet");
   els.payBank = document.querySelector("#payBank");
@@ -239,6 +234,12 @@ function bindEvents() {
     const couponAction = event.target.closest("[data-coupon-action]");
     if (couponAction) {
       handleCouponAction(couponAction);
+      return;
+    }
+
+    const closeNotification = event.target.closest("[data-notification-close]");
+    if (closeNotification) {
+      dismissNotification(closeNotification.closest(".notification-card"));
       return;
     }
 
@@ -415,15 +416,47 @@ function configureAdminLoginUi() {
   }
 
   if (els.adminAuthNote) {
-    els.adminAuthNote.textContent = "Enter your admin password to access the admin panel. The session locks after inactivity.";
+    els.adminAuthNote.textContent = canUseRemoteBrowserFeatures()
+      ? "Enter your admin password. Verification now happens on the server, and the session locks after inactivity."
+      : "Secure admin login works on the deployed site. Local file preview cannot verify the server-side admin session.";
   }
 
   if (els.adminSignOut) {
     els.adminSignOut.classList.add("hidden");
   }
+  if (els.adminUnlockPassword) {
+    els.adminUnlockPassword.disabled = !canUseRemoteBrowserFeatures();
+  }
+  if (els.adminPassword) {
+    els.adminPassword.disabled = !canUseRemoteBrowserFeatures();
+  }
 }
 
 async function restoreAdminAccess() {
+  if (!canUseRemoteBrowserFeatures()) {
+    return undefined;
+  }
+
+  try {
+    const response = await fetch(ADMIN_SESSION_PATH, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return undefined;
+    }
+
+    const payload = await response.json();
+    if (payload && payload.authenticated) {
+      unlockAdminUi("server");
+    }
+  } catch (error) {
+    console.warn("Could not restore admin session", error);
+  }
   return undefined;
 }
 
@@ -1085,7 +1118,7 @@ function showView(view) {
 function startCheckout(productId) {
   const product = getProductById(productId);
   if (!product) {
-    alert("This product is currently unavailable.");
+    showNotification("error", "Product Unavailable", "This product is currently unavailable.");
     return;
   }
 
@@ -1181,7 +1214,7 @@ async function handleCheckoutSubmit(event) {
   const validation = validateCheckoutData(data);
 
   if (!validation.valid) {
-    alert(`Please complete: ${validation.missing.join(", ")}`);
+    showNotification("warning", "Checkout Incomplete", `Please complete: ${validation.missing.join(", ")}.`);
     return;
   }
 
@@ -1258,6 +1291,7 @@ async function handleCheckoutSubmit(event) {
     }
 
     showOrderEmailNotice(orderForUi, `${syncSummary} ${netlifySummary} ${discordSummary}`.trim());
+    showNotification("success", "Order Placed Successfully!", "We have received your order. We will verify your payment soon.", { duration: 7000 });
     showView("orders");
   } finally {
     setCheckoutBusy(false);
@@ -1629,6 +1663,14 @@ function formatSupabaseError(error) {
   return error && error.message ? error.message : "Unknown Supabase error";
 }
 
+async function safeParseResponseJson(response) {
+  try {
+    return await response.json();
+  } catch (error) {
+    return {};
+  }
+}
+
 function showOrderEmailNotice(order, syncSummary) {
   if (!els.orderEmailNotice) {
     return;
@@ -1754,39 +1796,77 @@ function getGameIdLine(order) {
 }
 
 async function unlockAdmin() {
-  if (!ADMIN_PASSWORD) {
-    alert("Admin password is not configured for this deployment yet.");
+  if (!canUseRemoteBrowserFeatures()) {
+    showNotification("warning", "Deployed Site Required", "Secure admin login is only available on the deployed site, not on local file preview.");
     return;
   }
 
   const cooldownRemaining = getAdminCooldownRemainingMs();
   if (cooldownRemaining > 0) {
     const seconds = Math.ceil(cooldownRemaining / 1000);
-    alert(`Too many failed attempts. Try again in ${seconds} seconds.`);
+    showNotification("warning", "Admin Login Cooling Down", `Too many failed attempts. Try again in ${seconds} seconds.`);
     return;
   }
 
-  if (els.adminPassword.value !== ADMIN_PASSWORD) {
-    registerFailedAdminAttempt();
-    const remaining = Math.max(0, ADMIN_MAX_FAILED_ATTEMPTS - state.adminFailedAttempts);
-    if (getAdminCooldownRemainingMs() > 0) {
-      alert("Too many failed attempts. Admin login is temporarily locked for 60 seconds.");
+  const password = String(els.adminPassword ? els.adminPassword.value : "").trim();
+  if (!password) {
+    showNotification("warning", "Password Required", "Enter your admin password to continue.");
+    return;
+  }
+
+  try {
+    const response = await fetch(ADMIN_LOGIN_PATH, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({ password })
+    });
+
+    if (response.ok) {
+      clearAdminFailedAttempts();
+      unlockAdminUi("server");
+      showNotification("success", "Admin Unlocked", "Server-verified admin access has been granted.", { duration: 5000 });
       return;
     }
-    alert(`Wrong admin password. Please try again. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining before a short lock.`);
+
+    const payload = await safeParseResponseJson(response);
+    if (response.status === 401) {
+      registerFailedAdminAttempt();
+      const remaining = Math.max(0, ADMIN_MAX_FAILED_ATTEMPTS - state.adminFailedAttempts);
+      if (getAdminCooldownRemainingMs() > 0) {
+        showNotification("error", "Admin Login Locked", "Too many failed attempts. Admin login is temporarily locked for 60 seconds.");
+        return;
+      }
+      showNotification("error", "Admin Login Failed", `Wrong admin password. Please try again. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining before a short lock.`);
+      return;
+    }
+
+    showNotification("error", "Admin Login Error", payload.error || "Server-side admin login is not configured correctly.", { duration: 8000 });
+    return;
+  } catch (error) {
+    console.error("Admin login request failed", error);
+    showNotification("error", "Admin Login Error", "Could not reach the server to verify admin access.", { duration: 8000 });
     return;
   }
-
-  clearAdminFailedAttempts();
-  unlockAdminUi("password");
-}
-
-function unlockLocalAdminPreview() {
-  return unlockAdmin();
 }
 
 async function signOutAdmin() {
+  if (canUseRemoteBrowserFeatures()) {
+    try {
+      await fetch(ADMIN_LOGOUT_PATH, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+    } catch (error) {
+      console.warn("Admin logout request failed", error);
+    }
+  }
   lockAdminUi();
+  showNotification("info", "Signed Out", "Admin session closed successfully.", { duration: 4500 });
 }
 
 function getAdminCooldownRemainingMs() {
@@ -1823,7 +1903,7 @@ function resetAdminInactivityTimer() {
       return;
     }
     lockAdminUi();
-    alert("Admin was locked after inactivity. Enter the password again to continue.");
+    showNotification("info", "Admin Locked", "Admin was locked after inactivity. Enter the password again to continue.");
   }, ADMIN_INACTIVITY_MS);
 }
 
@@ -1896,7 +1976,7 @@ function populateAdminCategorySelect() {
 function handleCouponSave(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to manage coupon codes.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to manage coupon codes.");
     return;
   }
   const formData = new FormData(els.couponForm);
@@ -1909,7 +1989,7 @@ function handleCouponSave(event) {
   });
 
   if (!coupon) {
-    alert("Please enter a valid coupon code and value.");
+    showNotification("warning", "Invalid Coupon", "Please enter a valid coupon code and value.");
     return;
   }
 
@@ -1923,6 +2003,7 @@ function handleCouponSave(event) {
   populateCouponCategorySelect();
   renderAdminCoupons();
   updateCheckoutSummary();
+  showNotification("product", "Coupon Saved", `Coupon ${coupon.code} is ready to use.`, { duration: 5000 });
 }
 
 function renderAdminCoupons() {
@@ -1964,7 +2045,7 @@ function formatCouponLabel(coupon) {
 
 function handleCouponAction(button) {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to manage coupon codes.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to manage coupon codes.");
     return;
   }
   const code = String(button.dataset.couponCode || "").trim().toUpperCase();
@@ -1993,7 +2074,7 @@ function handleCouponAction(button) {
 function handleAddProduct(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to add products.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to add products.");
     return;
   }
   const formData = new FormData(els.addProductForm);
@@ -2010,6 +2091,7 @@ function handleAddProduct(event) {
   writeJson(STORAGE_KEYS.customProducts, customProducts);
   els.addProductForm.reset();
   renderProducts();
+  showNotification("product", "Product Added Successfully", `${product.name} has been added to the shop.`);
 }
 
 function refreshAdminProductSelect() {
@@ -2043,7 +2125,7 @@ function fillAdminEditForm() {
 function handleEditProduct(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to edit products.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to edit products.");
     return;
   }
   const productId = els.adminProductSelect.value;
@@ -2055,11 +2137,12 @@ function handleEditProduct(event) {
   };
   writeJson(STORAGE_KEYS.productEdits, productEdits);
   renderProducts();
+  showNotification("settings", "Product Updated", "The selected product details were updated successfully.");
 }
 
 function handleRemoveProduct() {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to remove products.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to remove products.");
     return;
   }
   const productId = els.adminProductSelect.value;
@@ -2069,15 +2152,17 @@ function handleRemoveProduct() {
     writeJson(STORAGE_KEYS.hiddenProducts, hiddenProducts);
   }
   renderProducts();
+  showNotification("warning", "Product Hidden", "The selected product card has been hidden from the shop.");
 }
 
 function handleRestoreProducts() {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to restore products.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to restore products.");
     return;
   }
   writeJson(STORAGE_KEYS.hiddenProducts, []);
   renderProducts();
+  showNotification("settings", "Products Restored", "All hidden products are visible again.");
 }
 
 async function loadPaymentSettings() {
@@ -2101,7 +2186,7 @@ async function loadPaymentSettings() {
 async function handlePaymentSave(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to update payment settings.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to update payment settings.");
     return;
   }
   const formData = new FormData(els.paymentForm);
@@ -2131,11 +2216,12 @@ async function handlePaymentSave(event) {
       applyPaymentSettingsToUi(sharedSettings);
     } catch (error) {
       console.error("Could not sync payment settings to Supabase", error);
-      alert(`Saved in this browser, but could not sync payment settings to other devices: ${formatSupabaseError(error)}`);
+      showNotification("warning", "Settings Saved Locally", `Saved in this browser, but could not sync payment settings to other devices: ${formatSupabaseError(error)}`, { duration: 8000 });
     }
   }
 
   els.qrUpload.value = "";
+  showNotification("settings", "Settings Saved", "Your payment settings have been updated successfully.");
 }
 
 function compressImage(file, maxSize, quality) {
@@ -2313,7 +2399,7 @@ function renderQr(qrValue = localStorage.getItem(STORAGE_KEYS.qr) || "") {
 
 async function removeQr() {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to remove the payment QR.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to remove the payment QR.");
     return;
   }
   const settings = getLocalPaymentSettings();
@@ -2331,9 +2417,10 @@ async function removeQr() {
       await clearPaymentQrFromSupabase(settings.qrPath);
     } catch (error) {
       console.error("Could not remove shared QR", error);
-      alert(`Removed from this browser, but could not remove the shared QR: ${formatSupabaseError(error)}`);
+      showNotification("warning", "QR Removed Locally", `Removed from this browser, but could not remove the shared QR: ${formatSupabaseError(error)}`, { duration: 8000 });
     }
   }
+  showNotification("settings", "QR Removed", "The payment QR has been removed.");
 }
 
 async function renderAdminOrders() {
@@ -2348,7 +2435,7 @@ async function renderAdminOrders() {
       orders = await getAdminOrdersFromSupabase();
     } catch (error) {
       console.warn("Falling back to local admin orders", error);
-      orders = state.adminAuthMode === "local" ? getLocalOrders() : [];
+      orders = getLocalOrders();
     }
   } else {
     orders = getLocalOrders();
@@ -2410,20 +2497,59 @@ function processAdminOrderNotifications(orders) {
   }
 }
 
-function showAdminToast(message) {
-  if (!els.adminToast) {
+function showNotification(type, title, message, options = {}) {
+  if (!els.notificationStack) {
     return;
   }
 
-  els.adminToast.textContent = message;
-  els.adminToast.classList.remove("hidden");
-  els.adminToast.classList.add("active");
+  const duration = Number(options.duration || 6000);
+  const icons = {
+    success: "✓",
+    error: "×",
+    warning: "!",
+    info: "i",
+    settings: "⚙",
+    product: "◧"
+  };
 
-  window.clearTimeout(showAdminToast.dismissTimer);
-  showAdminToast.dismissTimer = window.setTimeout(() => {
-    els.adminToast.classList.remove("active");
-    els.adminToast.classList.add("hidden");
-  }, 6000);
+  const card = document.createElement("article");
+  card.className = `notification-card is-${type || "info"}`;
+  card.style.setProperty("--notification-duration", `${duration}ms`);
+  card.innerHTML = `
+    <div class="notification-icon" aria-hidden="true">${icons[type] || icons.info}</div>
+    <div class="notification-copy">
+      <h4 class="notification-title"></h4>
+      <p class="notification-message"></p>
+    </div>
+    <button class="notification-close" type="button" data-notification-close aria-label="Close notification">×</button>
+    <div class="notification-progress" aria-hidden="true"></div>
+  `;
+  card.querySelector(".notification-title").textContent = title;
+  card.querySelector(".notification-message").textContent = message;
+  els.notificationStack.prepend(card);
+
+  if (els.notificationStack.children.length > 4) {
+    dismissNotification(els.notificationStack.lastElementChild);
+  }
+
+  window.setTimeout(() => {
+    dismissNotification(card);
+  }, duration);
+}
+
+function dismissNotification(card) {
+  if (!card || card.dataset.closing === "true") {
+    return;
+  }
+  card.dataset.closing = "true";
+  card.classList.add("is-closing");
+  window.setTimeout(() => {
+    card.remove();
+  }, 200);
+}
+
+function showAdminToast(message) {
+  showNotification("info", "Admin Update", message, { duration: 6000 });
 }
 
 function flashAdminTitle(message) {
@@ -2608,7 +2734,7 @@ async function getAdminOrdersFromSupabase() {
 
 async function handleAdminOrderAction(button) {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required for order actions.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required for order actions.");
     return;
   }
 
@@ -2656,8 +2782,15 @@ async function handleAdminOrderAction(button) {
     applyLocalAdminOrderAction(action, orderId);
     renderOrders();
     await renderAdminOrders();
+    const actionMessages = {
+      deliver: ["success", "Order Marked Completed", "The order status was updated to Completed."],
+      refund: ["warning", "Order Marked Refunded", "The order status was updated to Refunded."],
+      delete: ["settings", "Order Deleted", "The order was removed from the admin list."]
+    };
+    const [type, title, message] = actionMessages[action] || ["settings", "Order Updated", "The order was updated."];
+    showNotification(type, title, message, { duration: 5500 });
   } catch (error) {
-    alert(`Could not update this order in Supabase: ${formatSupabaseError(error)}`);
+      showNotification("error", "Order Update Failed", `Could not update this order in Supabase: ${formatSupabaseError(error)}`, { duration: 8000 });
   } finally {
     button.disabled = false;
   }
@@ -2683,7 +2816,7 @@ function applyLocalAdminOrderAction(action, orderId) {
 
 async function clearOrders() {
   if (!canManageAdminData()) {
-    alert("Secure admin access is required to clear orders.");
+    showNotification("warning", "Admin Access Required", "Secure admin access is required to clear orders.");
     return;
   }
   const message = state.supabase.ready && canManageCloudAdminData()
@@ -2709,8 +2842,9 @@ async function clearOrders() {
     writeJson(STORAGE_KEYS.orders, []);
     renderOrders();
     await renderAdminOrders();
+    showNotification("settings", "Orders Cleared", "All saved orders were cleared successfully.");
   } catch (error) {
-    alert(`Could not clear orders: ${formatSupabaseError(error)}`);
+      showNotification("error", "Clear Orders Failed", `Could not clear orders: ${formatSupabaseError(error)}`, { duration: 8000 });
   }
 }
 

@@ -42,8 +42,8 @@ Your website has many security best practices already in place:
    - Never expose direct URLs to customers
 
 2. **Stronger Admin Protection**
-   - Use a non-default `ADMIN_PASSWORD` in deployment settings
-   - Prefer real backend authentication when you move beyond a static admin panel
+   - Keep `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` only in deployment settings
+   - Verify admin login through server-side functions
    - Keep admin access limited to trusted operators
 
 3. **Secret Management**
@@ -162,8 +162,8 @@ cp site-config.local.example.js site-config.local.js
 ```javascript
 // Open F12 Console and run these to verify no secrets are exposed:
 
-// Build-time browser config is public in a static site:
-window.ThesHubHubConfig?.adminPassword  // Treat as visible to the client
+// Admin password should not be present in browser config:
+window.ThesHubHubConfig?.adminPassword  // Should be undefined
 localStorage.toString().includes("supabase")  // Should be false
 sessionStorage.toString().includes("webhook")  // Should be false
 
@@ -196,7 +196,7 @@ sessionStorage.toString().includes("webhook")  // Should be false
 
 - [ ] Read SECURITY.md for policies
 - [ ] Follow DEPLOYMENT_CHECKLIST.md for deployment
-- [ ] Rotate `ADMIN_PASSWORD` to a unique value for production
+- [ ] Rotate `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` to unique production values
 - [ ] Add environment variables to Netlify
 - [ ] Test using checklist
 - [ ] Monitor monthly per security.md guidelines

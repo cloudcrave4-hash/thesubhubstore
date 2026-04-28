@@ -18,11 +18,7 @@ A single-page static HTML/CSS/JS digital product store for ThesHubHub.
 
 ## Admin
 
-Admin now uses a password-only system:
-
-```text
-admin555
-```
+Admin now uses server-verified password login through Vercel Functions.
 
 Admin hardening now includes:
 
@@ -30,6 +26,7 @@ Admin hardening now includes:
 - Enter-to-unlock support in the password field
 - short cooldown after repeated failed login attempts
 - automatic admin lock after inactivity
+- password verification on the server instead of in browser JavaScript
 
 Product edits and hidden cards still live in this browser with localStorage.
 
@@ -65,7 +62,7 @@ Before cloud orders will work, run the SQL in `supabase-setup.sql` inside the Su
 - `store-assets` storage bucket for the payment QR image
 - public anon policies needed by this frontend-only build
 
-Important: re-run the SQL in `supabase-setup.sql`. It now matches the password-only admin flow again, which is easier to use but less secure than a real authenticated backend.
+Important: re-run the SQL in `supabase-setup.sql`. The current store still uses broad frontend access for some Supabase operations, so server-side admin login protects the password itself, but it does not fully replace a proper authenticated backend yet.
 
 ## Environment Config
 
@@ -74,8 +71,14 @@ Use `.env.example` as your template for Vercel or Netlify environment variables.
 Important:
 
 - `DISCORD_WEBHOOK_URL` and `SITE_URL` are proper server-side env values.
-- `ADMIN_PASSWORD` is injected into browser code at build time, so it is not truly secret on a public static site.
+- `ADMIN_PASSWORD` and `ADMIN_SESSION_SECRET` now stay server-side in Vercel Functions.
 - `PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `PUBLIC_SUPABASE_URL`, `PUBLIC_STORE_EMAIL`, and `PUBLIC_FORMSUBMIT_URL` are public config values, not secrets.
+
+For secure admin login on Vercel, set:
+
+- `ADMIN_PASSWORD`
+- `ADMIN_SESSION_SECRET`
+- `SITE_URL`
 
 Latest update: Vercel now uses `api/discord-order.js` for Discord alerts.
 
