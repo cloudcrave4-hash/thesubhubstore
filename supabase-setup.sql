@@ -35,8 +35,20 @@ create table if not exists public.store_settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.store_products (
+  product_id text primary key,
+  category text not null,
+  name text not null,
+  price text not null,
+  description text,
+  hidden boolean not null default false,
+  is_custom boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.orders enable row level security;
 alter table public.store_settings enable row level security;
+alter table public.store_products enable row level security;
 
 drop policy if exists "anon_select_orders" on public.orders;
 create policy "anon_select_orders"
@@ -92,6 +104,35 @@ with check (true);
 drop policy if exists "anon_delete_store_settings" on public.store_settings;
 create policy "anon_delete_store_settings"
 on public.store_settings
+for delete
+to anon, authenticated
+using (true);
+
+drop policy if exists "public_select_store_products" on public.store_products;
+create policy "public_select_store_products"
+on public.store_products
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "anon_insert_store_products" on public.store_products;
+create policy "anon_insert_store_products"
+on public.store_products
+for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "anon_update_store_products" on public.store_products;
+create policy "anon_update_store_products"
+on public.store_products
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+drop policy if exists "anon_delete_store_products" on public.store_products;
+create policy "anon_delete_store_products"
+on public.store_products
 for delete
 to anon, authenticated
 using (true);

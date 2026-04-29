@@ -12,6 +12,7 @@ A single-page static HTML/CSS/JS digital product store for ThesHubHub.
 - My Orders page with search and status tabs
 - Admin panel for products, payment settings, QR upload, and orders
 - Supabase order sync for cloud-backed checkout and admin order management
+- Supabase product catalog sync so admin product changes can appear on other devices
 - Netlify Forms capture for viewing order submissions in the Netlify dashboard after deploy
 - Optional Discord order alerts through a Netlify Function webhook relay
 - Console smoke tests for rendering, checkout, admin edit/remove, validation, and orders
@@ -28,7 +29,7 @@ Admin hardening now includes:
 - automatic admin lock after inactivity
 - password verification on the server instead of in browser JavaScript
 
-Product edits and hidden cards still live in this browser with localStorage.
+Product edits and hidden cards now try to sync to Supabase too, so product add/edit/remove can appear across devices. Local browser storage still stays as a fallback if cloud sync fails.
 
 Orders now try to sync to Supabase first and also stay cached in the browser so My Orders can still show the customer's own history on the same device.
 
@@ -58,6 +59,7 @@ Before cloud orders will work, run the SQL in `supabase-setup.sql` inside the Su
 
 - `orders` table
 - `store_settings` table
+- `store_products` table
 - `payment-screenshots` storage bucket
 - `store-assets` storage bucket for the payment QR image
 - public anon policies needed by this frontend-only build

@@ -2,6 +2,8 @@ const APP_CONFIG = window.ThesHubHubConfig || {};
 const ADMIN_MAX_FAILED_ATTEMPTS = 5;
 const ADMIN_LOCKOUT_MS = 60 * 1000;
 const ADMIN_INACTIVITY_MS = 10 * 60 * 1000;
+const PURCHASE_POPUP_INTERVAL_MS = 5 * 60 * 1000;
+const PURCHASE_POPUP_VISIBLE_MS = 8000;
 const STORE_EMAIL = readPublicConfig("storeEmail", "theshubhub@gmail.com");
 const FORM_SUBMIT_URL = readPublicConfig("formSubmitUrl", `https://formsubmit.co/${STORE_EMAIL}`);
 
@@ -15,6 +17,7 @@ const SUPABASE_CONFIG = {
   url: readPublicConfig("supabaseUrl", "https://rfnfjuwuzihjxgamnyou.supabase.co"),
   publishableKey: readPublicConfig("supabasePublishableKey", "sb_publishable_Y4aG9YCLOoX0mqtGL5yJfw_-fZolStZ"),
   ordersTable: "orders",
+  productsTable: "store_products",
   screenshotsBucket: "payment-screenshots",
   settingsTable: "store_settings",
   assetsBucket: "store-assets",
@@ -44,7 +47,7 @@ const categories = {
   mlbb: { label: "MLBB Diamonds", art: "art-mlbb", logo: "D" },
   spotify: { label: "Spotify Premium", art: "art-spotify", logo: "S" },
   netflix: { label: "Netflix Plans", art: "art-netflix", logo: "N" },
-  discord: { label: "Discord Nitro / Giftcards", art: "art-discord", logo: "NITRO" }
+  discord: { label: "Giftscards & others", art: "art-discord", logo: "NITRO" }
 };
 
 const baseProducts = [
@@ -81,7 +84,255 @@ const baseProducts = [
 
   { id: "discord-1", category: "discord", name: "Discord Nitro 1 Month", price: "NPR 199", description: "Nitro-style purple digital badge package." },
   { id: "discord-3", category: "discord", name: "Discord Nitro 3 Months", price: "NPR 449", description: "Three-month Nitro-style digital package." },
-  { id: "steam-giftcard", category: "discord", name: "Steam Giftcard", price: "Editable by admin", description: "Giftcard price can be changed from Admin." }
+  { id: "steam-giftcard", category: "discord", name: "Steam Giftcard", price: "Editable by admin", description: "Giftcard price can be changed from Admin." },
+  { id: "chatgpt-plus", category: "discord", name: "ChatGPT Plus", price: "NPR 599", description: "ChatGPT Plus subscription with quick delivery after payment confirmation." },
+  { id: "premium-games-showcase", category: "discord", name: "Premium Games", price: "From Rs 1500", description: "Browse premium game products like GTA 5, FC 26, Rust, God of War, Raft, and more.", notPurchasable: true, group: "premium-games", optionCount: 7 },
+  {
+    id: "premium-gta-5",
+    category: "discord",
+    name: "GTA 5",
+    price: "Rs 2000",
+    description: "Grand Theft Auto V premium game product.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "GTA 5",
+    billing: "PC Game",
+    highlight: "Popular",
+    perks: [
+      "Premium game product",
+      "PC access option",
+      "Fast delivery after payment confirmation",
+      "Best for action and open-world fans"
+    ]
+  },
+  {
+    id: "premium-fc26-steam",
+    category: "discord",
+    name: "FC 26 (Steam)",
+    price: "Rs 3500",
+    description: "FC 26 Steam option for PC players.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "FC 26 Steam",
+    billing: "Steam",
+    highlight: "Football Pick",
+    perks: [
+      "Steam version",
+      "PC access option",
+      "Fast delivery after payment confirmation",
+      "Great for football game fans"
+    ]
+  },
+  {
+    id: "premium-fc26-ps5",
+    category: "discord",
+    name: "FC 26 (PS5 PSN Account)",
+    price: "Rs 7200",
+    description: "FC 26 PS5 PSN account option.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "FC 26 PS5",
+    billing: "PSN Account",
+    highlight: "Console",
+    perks: [
+      "PS5 PSN account option",
+      "Fast delivery after payment confirmation",
+      "Premium football title",
+      "Best for console players"
+    ]
+  },
+  {
+    id: "premium-crimson-desert",
+    category: "discord",
+    name: "Crimson Desert PC",
+    price: "Rs 7000",
+    description: "Crimson Desert PC premium game product.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "Crimson Desert",
+    billing: "PC Game",
+    highlight: "Premium",
+    perks: [
+      "PC access option",
+      "Premium game product",
+      "Fast delivery after payment confirmation",
+      "Great for story and adventure fans"
+    ]
+  },
+  {
+    id: "premium-rust",
+    category: "discord",
+    name: "Rust PC",
+    price: "Rs 2000",
+    description: "Rust PC premium game product.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "Rust",
+    billing: "PC Game",
+    highlight: "Survival",
+    perks: [
+      "PC access option",
+      "Fast delivery after payment confirmation",
+      "Premium survival title",
+      "Best for co-op and survival fans"
+    ]
+  },
+  {
+    id: "premium-god-of-war",
+    category: "discord",
+    name: "God of War",
+    price: "Rs 5000",
+    description: "God of War premium game product.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "God of War",
+    billing: "PC Game",
+    highlight: "Story Hit",
+    perks: [
+      "Premium game product",
+      "PC access option",
+      "Fast delivery after payment confirmation",
+      "Best for story-rich action fans"
+    ]
+  },
+  {
+    id: "premium-raft",
+    category: "discord",
+    name: "Raft",
+    price: "Rs 1500",
+    description: "Raft premium game product.",
+    showInGrid: false,
+    group: "premium-games",
+    tier: "Raft",
+    billing: "PC Game",
+    highlight: "Budget Pick",
+    perks: [
+      "Premium game product",
+      "PC access option",
+      "Fast delivery after payment confirmation",
+      "Best for survival and co-op fans"
+    ]
+  },
+  { id: "minecraft-showcase", category: "discord", name: "Minecraft Java & Bedrock", price: "From NPR 1500", description: "Choose between a full access new account or a redeem key option.", notPurchasable: true, group: "minecraft", optionCount: 2 },
+  {
+    id: "minecraft-new-account",
+    category: "discord",
+    name: "Minecraft New Account",
+    price: "NPR 1500",
+    description: "Full access new account for Minecraft Java & Bedrock Edition.",
+    showInGrid: false,
+    group: "minecraft",
+    tier: "New Account",
+    billing: "Full Access",
+    highlight: "Best Starter",
+    perks: [
+      "Full access new account",
+      "Java & Bedrock Edition",
+      "Singleplayer and multiplayer",
+      "Quick delivery after payment confirmation"
+    ]
+  },
+  {
+    id: "minecraft-redeem-key",
+    category: "discord",
+    name: "Minecraft Redeem Key",
+    price: "NPR 3200",
+    description: "Redeem key option for Minecraft Java & Bedrock Edition.",
+    showInGrid: false,
+    group: "minecraft",
+    tier: "Redeem Key",
+    billing: "Official Key",
+    highlight: "Premium",
+    perks: [
+      "Redeem on your Microsoft account",
+      "Java & Bedrock Edition",
+      "Singleplayer and multiplayer",
+      "Safe delivery after payment confirmation"
+    ]
+  },
+  { id: "crunchyroll-showcase", category: "discord", name: "Crunchyroll Subscription", price: "From NPR 299", description: "Monthly and yearly Crunchyroll premium plans with four options.", notPurchasable: true },
+  {
+    id: "crunchyroll-fan-monthly",
+    category: "discord",
+    name: "Crunchyroll Fan Monthly",
+    price: "NPR 299",
+    description: "Fan monthly plan for 1 device streaming and offline viewing.",
+    showInGrid: false,
+    group: "crunchyroll",
+    tier: "Fan",
+    billing: "Monthly",
+    devices: "1 device",
+    highlight: "",
+    perks: [
+      "No ads",
+      "Complete access to Crunchyroll's library",
+      "New episodes shortly after airing in Japan",
+      "Stream on 1 device at a time",
+      "Offline viewing"
+    ]
+  },
+  {
+    id: "crunchyroll-megafan-monthly",
+    category: "discord",
+    name: "Crunchyroll Mega Fan Monthly",
+    price: "NPR 399",
+    description: "Mega Fan monthly plan for 4 devices, offline viewing, and Game Vault access.",
+    showInGrid: false,
+    group: "crunchyroll",
+    tier: "Mega Fan",
+    billing: "Monthly",
+    devices: "4 devices",
+    highlight: "Most Popular",
+    perks: [
+      "No ads",
+      "Complete access to Crunchyroll's library",
+      "New episodes shortly after airing in Japan",
+      "Stream on 4 devices at a time",
+      "Offline viewing",
+      "Access to Crunchyroll Game Vault"
+    ]
+  },
+  {
+    id: "crunchyroll-fan-yearly",
+    category: "discord",
+    name: "Crunchyroll Fan Yearly",
+    price: "NPR 2599",
+    description: "Fan yearly plan for 1 device streaming and offline viewing.",
+    showInGrid: false,
+    group: "crunchyroll",
+    tier: "Fan",
+    billing: "Yearly",
+    devices: "1 device",
+    highlight: "Save yearly",
+    perks: [
+      "No ads",
+      "Complete access to Crunchyroll's library",
+      "New episodes shortly after airing in Japan",
+      "Stream on 1 device at a time",
+      "Offline viewing"
+    ]
+  },
+  {
+    id: "crunchyroll-megafan-yearly",
+    category: "discord",
+    name: "Crunchyroll Mega Fan Yearly",
+    price: "NPR 3500",
+    description: "Mega Fan yearly plan for 4 devices, offline viewing, and Game Vault access.",
+    showInGrid: false,
+    group: "crunchyroll",
+    tier: "Mega Fan",
+    billing: "Yearly",
+    devices: "4 devices",
+    highlight: "Best yearly value",
+    perks: [
+      "No ads",
+      "Complete access to Crunchyroll's library",
+      "New episodes shortly after airing in Japan",
+      "Stream on 4 devices at a time",
+      "Offline viewing",
+      "Access to Crunchyroll Game Vault"
+    ]
+  }
 ];
 
 const state = {
@@ -108,7 +359,9 @@ const state = {
     client: null,
     ready: false,
     message: "Supabase is not active.",
-    adminOrders: []
+    adminOrders: [],
+    products: [],
+    productCatalogLoaded: false
   }
 };
 
@@ -126,6 +379,7 @@ async function initApp() {
   initializeSupabase();
   configureAdminLoginUi();
   await loadPaymentSettings();
+  await loadProductCatalog();
   renderProducts();
   renderAdminCoupons();
   startPurchasePopupLoop();
@@ -200,11 +454,14 @@ function cacheElements() {
   els.productModalCategory = document.querySelector("#productModalCategory");
   els.productModalTitle = document.querySelector("#productModalTitle");
   els.productModalDescription = document.querySelector("#productModalDescription");
+  els.productModalMeta = document.querySelector("#productModal .modal-meta");
+  els.productModalBlocks = Array.from(document.querySelectorAll("#productModal .modal-block"));
   els.productModalPrice = document.querySelector("#productModalPrice");
   els.productModalDelivery = document.querySelector("#productModalDelivery");
   els.productModalRequired = document.querySelector("#productModalRequired");
   els.productModalRefund = document.querySelector("#productModalRefund");
   els.productModalInstructions = document.querySelector("#productModalInstructions");
+  els.productModalOptions = document.querySelector("#productModalOptions");
   els.modalBuyNow = document.querySelector("#modalBuyNow");
   els.invoiceModal = document.querySelector("#invoiceModal");
   els.closeInvoiceModal = document.querySelector("#closeInvoiceModal");
@@ -235,9 +492,19 @@ function bindEvents() {
       showView(viewButton.dataset.view);
     }
 
+    const openProductButton = event.target.closest("[data-open-product]");
+    if (openProductButton) {
+      openProductModal(openProductButton.dataset.openProduct);
+      return;
+    }
+
     const buyButton = event.target.closest("[data-buy-id]");
     if (buyButton) {
+      if (event.target.closest("#productModal")) {
+        closeProductModal();
+      }
       startCheckout(buyButton.dataset.buyId);
+      return;
     }
 
     const buyAgain = event.target.closest("[data-buy-again]");
@@ -348,8 +615,12 @@ function bindEvents() {
   els.addProductForm.addEventListener("submit", handleAddProduct);
   els.editProductForm.addEventListener("submit", handleEditProduct);
   els.adminProductSelect.addEventListener("change", fillAdminEditForm);
-  els.removeProduct.addEventListener("click", handleRemoveProduct);
-  els.restoreProducts.addEventListener("click", handleRestoreProducts);
+  els.removeProduct.addEventListener("click", () => {
+    void handleRemoveProduct();
+  });
+  els.restoreProducts.addEventListener("click", () => {
+    void handleRestoreProducts();
+  });
   els.paymentForm.addEventListener("submit", (event) => {
     void handlePaymentSave(event);
   });
@@ -556,6 +827,14 @@ function writeJson(key, value) {
 }
 
 function getAllProducts(options = {}) {
+  if (state.supabase.productCatalogLoaded) {
+    return getCloudBackedProducts(options);
+  }
+
+  return getLegacyLocalProducts(options);
+}
+
+function getLegacyLocalProducts(options = {}) {
   const customProducts = readJson(STORAGE_KEYS.customProducts, []);
   const productEdits = readJson(STORAGE_KEYS.productEdits, {});
   const hiddenProducts = readJson(STORAGE_KEYS.hiddenProducts, []);
@@ -568,12 +847,123 @@ function getAllProducts(options = {}) {
   return merged.filter((product) => !hiddenProducts.includes(product.id));
 }
 
+function getCloudBackedProducts(options = {}) {
+  const rows = Array.isArray(state.supabase.products) ? state.supabase.products : [];
+  const overrides = new Map();
+  const customProducts = [];
+
+  rows.forEach((row) => {
+    const normalized = mapSupabaseProductRow(row);
+    if (!normalized) {
+      return;
+    }
+
+    if (normalized.isCustom) {
+      customProducts.push(normalized);
+    } else {
+      overrides.set(normalized.id, normalized);
+    }
+  });
+
+  const merged = baseProducts
+    .map((product) => applyProductEdit(product, overrides.get(product.id)))
+    .concat(customProducts);
+
+  if (options.includeHidden) {
+    return merged;
+  }
+
+  return merged.filter((product) => !product.hidden);
+}
+
 function applyProductEdit(product, edit) {
   return edit ? { ...product, ...edit } : { ...product };
 }
 
 function isProductHidden(productId, hiddenIds) {
   return hiddenIds.includes(productId);
+}
+
+async function loadProductCatalog(options = {}) {
+  if (!state.supabase.ready || !state.supabase.client) {
+    return getLegacyLocalProducts({ includeHidden: true });
+  }
+
+  try {
+    const { data, error } = await state.supabase.client
+      .from(SUPABASE_CONFIG.productsTable)
+      .select("*")
+      .order("updated_at", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    state.supabase.products = data || [];
+    state.supabase.productCatalogLoaded = true;
+
+    if (!options.skipRender) {
+      renderProducts();
+    }
+
+    return getCloudBackedProducts({ includeHidden: true });
+  } catch (error) {
+    console.warn("Could not load shared product catalog", error);
+    state.supabase.productCatalogLoaded = false;
+    state.supabase.products = [];
+    return getLegacyLocalProducts({ includeHidden: true });
+  }
+}
+
+function mapSupabaseProductRow(row) {
+  if (!row || !row.product_id) {
+    return null;
+  }
+
+  return {
+    id: row.product_id,
+    category: row.category,
+    name: row.name,
+    price: row.price,
+    description: row.description || "",
+    hidden: Boolean(row.hidden),
+    isCustom: Boolean(row.is_custom)
+  };
+}
+
+function createSupabaseProductPayload(product, options = {}) {
+  return {
+    product_id: product.id,
+    category: product.category,
+    name: product.name,
+    price: product.price,
+    description: product.description || "",
+    hidden: Boolean(options.hidden),
+    is_custom: Boolean(options.isCustom),
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function saveProductToSupabase(product, options = {}) {
+  const payload = createSupabaseProductPayload(product, options);
+  const { error } = await state.supabase.client
+    .from(SUPABASE_CONFIG.productsTable)
+    .upsert(payload, { onConflict: "product_id" });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function restoreHiddenProductsInSupabase() {
+  const { error } = await state.supabase.client
+    .from(SUPABASE_CONFIG.productsTable)
+    .update({ hidden: false, updated_at: new Date().toISOString() })
+    .eq("hidden", true);
+
+  if (error) {
+    throw error;
+  }
 }
 
 function getProductById(id, options = {}) {
@@ -717,6 +1107,7 @@ function renderProducts() {
     grid.innerHTML = "";
     getAllProducts()
       .filter((product) => product.category === category)
+      .filter((product) => product.showInGrid !== false)
       .forEach((product) => grid.appendChild(createProductCard(product)));
 
     if (!grid.children.length) {
@@ -736,6 +1127,18 @@ function createProductCard(product) {
   const tags = card.querySelector(".product-tags");
 
   art.classList.add(category.art);
+  if (product.id.startsWith("crunchyroll")) {
+    art.classList.add("art-crunchyroll");
+  }
+  if (product.id.startsWith("premium-")) {
+    art.classList.add("art-premium-games");
+  }
+  if (product.id.startsWith("minecraft")) {
+    art.classList.add("art-minecraft");
+  }
+  if (product.id === "chatgpt-plus") {
+    art.classList.add("art-chatgpt");
+  }
   art.appendChild(createProductLogo(product));
   card.dataset.productId = product.id;
 
@@ -749,7 +1152,13 @@ function createProductCard(product) {
   card.querySelector("h3").textContent = product.name;
   card.querySelector("p").textContent = product.description || `${category.label} digital product.`;
   card.querySelector("strong").textContent = product.price;
-  card.querySelector(".buy-button").dataset.buyId = product.id;
+  const actionButton = card.querySelector(".buy-button");
+  if (product.notPurchasable) {
+    actionButton.textContent = "View Plans";
+    actionButton.dataset.openProduct = product.id;
+  } else {
+    actionButton.dataset.buyId = product.id;
+  }
 
   return card;
 }
@@ -804,8 +1213,47 @@ function createProductLogo(product) {
     return logo;
   }
 
+  if (product.id === "chatgpt-plus") {
+    logo.classList.add("logo-chatgpt");
+    logo.innerHTML = `
+      <span class="chatgpt-badge">
+        <span class="chatgpt-ring"></span>
+        <span class="chatgpt-center">GPT</span>
+      </span>
+      <span class="plan-chip">PLUS</span>
+    `;
+    return logo;
+  }
+
+  if (product.id.startsWith("premium-")) {
+    logo.classList.add("logo-premium-games");
+    logo.innerHTML = `
+      <img class="premium-games-product-image" src="assets/premium-games-product.webp" alt="Premium games artwork">
+      <span class="plan-chip">${getShowcaseChip(product)}</span>
+    `;
+    return logo;
+  }
+
+  if (product.id.startsWith("minecraft")) {
+    logo.classList.add("logo-minecraft");
+    logo.innerHTML = `
+      <img class="minecraft-product-image" src="assets/minecraft-product.png" alt="Minecraft Java and Bedrock artwork">
+      <span class="plan-chip">${getShowcaseChip(product)}</span>
+    `;
+    return logo;
+  }
+
+  if (product.id.startsWith("crunchyroll")) {
+    logo.classList.add("logo-crunchyroll");
+    logo.innerHTML = `
+      <img class="crunchyroll-product-image" src="assets/crunchyroll-product.webp" alt="Crunchyroll subscription artwork">
+      <span class="plan-chip">${getShowcaseChip(product)}</span>
+    `;
+    return logo;
+  }
+
   logo.innerHTML = `
-    <img class="discord-product-image" src="assets/discord-nitro-product.png" alt="Discord Nitro product artwork">
+    <img class="discord-product-image" src="assets/discord-nitro-product.jpg" alt="Discord Nitro product artwork">
     <span class="plan-chip">${getPlanShortName(product.name)}</span>
   `;
   return logo;
@@ -814,11 +1262,15 @@ function createProductLogo(product) {
 function getProductBadges(product) {
   const badges = [];
   const categoryProducts = getAllProducts({ includeHidden: true }).filter((item) => item.category === product.category);
+  const visibleCategoryProducts = categoryProducts.filter((item) => item.showInGrid !== false);
   const prices = categoryProducts
     .map((item) => parsePrice(item.price))
     .filter((value) => Number.isFinite(value) && value > 0);
   const priceValue = parsePrice(product.price);
-  const cheapest = prices.length ? Math.min(...prices) : null;
+  const visiblePrices = visibleCategoryProducts
+    .map((item) => parsePrice(item.price))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const cheapest = visiblePrices.length ? Math.min(...visiblePrices) : null;
 
   if (isPopularProduct(product)) {
     badges.push({ label: "Popular", variant: "tag-popular" });
@@ -845,7 +1297,11 @@ function isPopularProduct(product) {
     "mlbb-706",
     "spotify-individual",
     "netflix-2",
-    "discord-1"
+    "discord-1",
+    "crunchyroll-showcase",
+    "chatgpt-plus",
+    "minecraft-showcase",
+    "premium-games-showcase"
   ].includes(product.id);
 }
 
@@ -855,7 +1311,8 @@ function isBestValueProduct(product) {
     "mlbb-5532",
     "spotify-family",
     "netflix-5",
-    "discord-3"
+    "discord-3",
+    "crunchyroll-showcase"
   ].includes(product.id) || /weekly-3|twilight/i.test(product.id);
 }
 
@@ -864,6 +1321,33 @@ function hasFastDelivery(product) {
 }
 
 function getProductDetailContent(product) {
+  if (product.id.startsWith("crunchyroll")) {
+    return {
+      delivery: "10 to 30 minutes after payment confirmation",
+      required: "Full name, valid email, and payment screenshot. We deliver the subscription to your own email/account details.",
+      refund: "Refunds can be requested before the Crunchyroll subscription is delivered. Delivered subscriptions are handled case by case.",
+      instructions: "Open the Crunchyroll card, choose the plan that fits you, then complete checkout with a clear payment screenshot and the best contact email."
+    };
+  }
+
+  if (product.id.startsWith("minecraft")) {
+    return {
+      delivery: "10 to 30 minutes after payment confirmation",
+      required: "Full name, valid email, and payment screenshot. Add a note if you want the account option or redeem key option.",
+      refund: "Refunds can be requested before the Minecraft account or redeem key is delivered. Delivered products are reviewed case by case.",
+      instructions: "Open the Minecraft card, choose New Account or Redeem Key, and upload a clear payment screenshot before checkout."
+    };
+  }
+
+  if (product.id.startsWith("premium-")) {
+    return {
+      delivery: "10 to 30 minutes after payment confirmation",
+      required: "Full name, valid email, and payment screenshot. Add a note if you want a specific game option.",
+      refund: "Refunds can be requested before the selected game product is delivered. Delivered products are reviewed case by case.",
+      instructions: "Open the Premium Games card, choose the game option you want, then complete checkout with a clear payment screenshot."
+    };
+  }
+
   const detailMap = {
     pubg: {
       delivery: "5 to 15 minutes after payment confirmation",
@@ -915,6 +1399,18 @@ function openProductModal(productId) {
   const details = getProductDetailContent(product);
   const art = document.createElement("div");
   art.className = `product-art modal-art ${categories[product.category].art}`;
+  if (product.id.startsWith("crunchyroll")) {
+    art.classList.add("art-crunchyroll");
+  }
+  if (product.id.startsWith("premium-")) {
+    art.classList.add("art-premium-games");
+  }
+  if (product.id.startsWith("minecraft")) {
+    art.classList.add("art-minecraft");
+  }
+  if (product.id === "chatgpt-plus") {
+    art.classList.add("art-chatgpt");
+  }
   art.appendChild(createProductLogo(product));
 
   els.productModalArt.innerHTML = "";
@@ -927,7 +1423,11 @@ function openProductModal(productId) {
   els.productModalRequired.textContent = details.required;
   els.productModalRefund.textContent = details.refund;
   els.productModalInstructions.textContent = details.instructions;
+  renderProductModalOptions(product);
+  applyProductModalMode(product);
   els.modalBuyNow.dataset.buyId = product.id;
+  els.modalBuyNow.disabled = Boolean(product.notPurchasable);
+  els.modalBuyNow.classList.toggle("hidden", Boolean(product.notPurchasable));
   els.productModal.classList.remove("hidden");
   document.body.classList.add("modal-open");
 }
@@ -939,6 +1439,67 @@ function closeProductModal() {
 
   els.productModal.classList.add("hidden");
   document.body.classList.remove("modal-open");
+}
+
+function renderProductModalOptions(product) {
+  if (!els.productModalOptions) {
+    return;
+  }
+
+  els.productModalOptions.innerHTML = "";
+  els.productModalOptions.classList.add("hidden");
+
+  if (!product.notPurchasable || !product.group) {
+    return;
+  }
+
+  getGroupedPlanProducts(product.group).forEach((plan) => {
+    const option = document.createElement("article");
+    option.className = "modal-option-card";
+    const perks = Array.isArray(plan.perks)
+      ? plan.perks.map((perk) => `<li>${escapeHtml(perk)}</li>`).join("")
+      : "";
+
+    option.innerHTML = `
+      <div class="modal-option-head">
+        <div>
+          <span class="modal-option-label">${escapeHtml(plan.billing || "Plan")}</span>
+          <h4>${escapeHtml(plan.tier || plan.name)}</h4>
+        </div>
+        ${plan.highlight ? `<span class="modal-option-badge">${escapeHtml(plan.highlight)}</span>` : ""}
+      </div>
+      <div class="modal-option-price">${escapeHtml(plan.price)}</div>
+      <p class="modal-option-copy">${escapeHtml(plan.description || "Choose the option that fits your order.")}</p>
+      <ul class="modal-option-list">${perks}</ul>
+      <button class="button primary full" type="button" data-buy-id="${escapeHtml(plan.id)}">Choose ${escapeHtml(plan.tier || "Plan")}</button>
+    `;
+
+    els.productModalOptions.appendChild(option);
+  });
+
+  els.productModalOptions.classList.remove("hidden");
+}
+
+function applyProductModalMode(product) {
+  const isChooserShowcase = Boolean(product.notPurchasable && product.group);
+
+  if (els.productModalDescription) {
+    els.productModalDescription.classList.toggle("hidden", isChooserShowcase);
+  }
+  if (els.productModalMeta) {
+    els.productModalMeta.classList.toggle("hidden", isChooserShowcase);
+  }
+  if (Array.isArray(els.productModalBlocks)) {
+    els.productModalBlocks.forEach((block) => block.classList.toggle("hidden", isChooserShowcase));
+  }
+
+  if (isChooserShowcase) {
+    els.productModalCategory.textContent = getChooserCategoryLabel(product);
+    els.productModalTitle.textContent = getChooserTitle(product);
+  } else {
+    els.productModalCategory.textContent = categories[product.category].label;
+    els.productModalTitle.textContent = product.name;
+  }
 }
 
 function openInvoiceModal(orderId) {
@@ -1159,16 +1720,76 @@ function getPlanShortName(name) {
   return numbers ? numbers[0].replace(/\s+/g, " ") : clean.slice(0, 5).toUpperCase();
 }
 
+function getShowcaseChip(product) {
+  if (product.notPurchasable) {
+    if (product.optionCount) {
+      return `${product.optionCount} Options`;
+    }
+    if (product.group === "crunchyroll") {
+      return "4 Plans";
+    }
+    return "View";
+  }
+
+  if (product.group === "minecraft") {
+    return product.tier ? product.tier.toUpperCase() : "MINE";
+  }
+
+  if (product.group === "premium-games") {
+    return product.tier ? product.tier.toUpperCase().slice(0, 12) : "GAMES";
+  }
+
+  if (product.billing && product.tier) {
+    return `${product.billing} ${product.tier}`.replace(/\s+/g, " ");
+  }
+  return "Anime";
+}
+
+function getCheckoutProducts(category) {
+  return getAllProducts().filter((product) => product.category === category && !product.notPurchasable);
+}
+
+function getGroupedPlanProducts(group) {
+  return getAllProducts({ includeHidden: true }).filter((product) => product.group === group && !product.notPurchasable);
+}
+
+function getChooserCategoryLabel(product) {
+  if (product.group === "minecraft") {
+    return "Minecraft Options";
+  }
+  if (product.group === "crunchyroll") {
+    return "Crunchyroll Plans";
+  }
+  if (product.group === "premium-games") {
+    return "Premium Games";
+  }
+  return categories[product.category].label;
+}
+
+function getChooserTitle(product) {
+  if (product.group === "minecraft") {
+    return "Choose Your Minecraft Option";
+  }
+  if (product.group === "crunchyroll") {
+    return "Choose Your Crunchyroll Subscription";
+  }
+  if (product.group === "premium-games") {
+    return "Choose Your Premium Game";
+  }
+  return product.name;
+}
+
 function showView(view) {
   state.currentView = view;
   closeProductModal();
+  closeInvoiceModal();
   document.querySelectorAll(".section-view").forEach((section) => {
     const key = section.dataset.section;
     let visible = key === view;
 
-    if (view === "home") {
-      visible = key === "home" || key === "home-extra";
-    }
+      if (view === "home") {
+        visible = key === "home" || key === "discord";
+      }
 
     section.classList.toggle("hidden", !visible);
   });
@@ -1176,6 +1797,10 @@ function showView(view) {
   if (view === "orders") {
     renderOrders();
     void syncLocalOrdersFromSupabase({ rerender: true });
+  }
+
+  if (state.supabase.ready && ["home", "pubg", "mlbb", "spotify", "netflix", "discord", "admin"].includes(view)) {
+    void loadProductCatalog();
   }
 
   if (view === "admin") {
@@ -1203,7 +1828,7 @@ function startCheckout(productId) {
 }
 
 function prepareCheckout(category, productId) {
-  const productList = getAllProducts().filter((product) => product.category === category);
+  const productList = getCheckoutProducts(category);
 
   els.checkoutCategory.innerHTML = "";
   const categoryOption = new Option(categories[category].label, category);
@@ -2148,7 +2773,7 @@ function handleCouponAction(button) {
   updateCheckoutSummary();
 }
 
-function handleAddProduct(event) {
+async function handleAddProduct(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
     showNotification("warning", "Admin Access Required", "Secure admin access is required to add products.");
@@ -2166,6 +2791,19 @@ function handleAddProduct(event) {
   const customProducts = readJson(STORAGE_KEYS.customProducts, []);
   customProducts.push(product);
   writeJson(STORAGE_KEYS.customProducts, customProducts);
+
+  if (state.supabase.ready && canManageCloudAdminData()) {
+    try {
+      await saveProductToSupabase(product, { isCustom: true, hidden: false });
+      await loadProductCatalog({ skipRender: true });
+    } catch (error) {
+      console.error("Could not sync added product to Supabase", error);
+      state.supabase.productCatalogLoaded = false;
+      state.supabase.products = [];
+      showNotification("warning", "Product Added Locally", `Added in this browser, but could not sync product to other devices: ${formatSupabaseError(error)}`, { duration: 8000 });
+    }
+  }
+
   els.addProductForm.reset();
   renderProducts();
   showNotification("product", "Product Added Successfully", `${product.name} has been added to the shop.`);
@@ -2176,12 +2814,11 @@ function refreshAdminProductSelect() {
     return;
   }
 
-  const hiddenProducts = readJson(STORAGE_KEYS.hiddenProducts, []);
   const products = getAllProducts({ includeHidden: true });
   els.adminProductSelect.innerHTML = "";
 
   products.forEach((product) => {
-    const hiddenLabel = hiddenProducts.includes(product.id) ? " (hidden)" : "";
+    const hiddenLabel = product.hidden ? " (hidden)" : "";
     els.adminProductSelect.add(new Option(`${categories[product.category].label} - ${product.name}${hiddenLabel}`, product.id));
   });
 
@@ -2199,13 +2836,18 @@ function fillAdminEditForm() {
   els.editProductForm.elements.description.value = product.description || "";
 }
 
-function handleEditProduct(event) {
+async function handleEditProduct(event) {
   event.preventDefault();
   if (!canManageAdminData()) {
     showNotification("warning", "Admin Access Required", "Secure admin access is required to edit products.");
     return;
   }
   const productId = els.adminProductSelect.value;
+  const currentProduct = getProductById(productId, { includeHidden: true });
+  if (!currentProduct) {
+    showNotification("error", "Product Not Found", "The selected product could not be found.");
+    return;
+  }
   const productEdits = readJson(STORAGE_KEYS.productEdits, {});
   productEdits[productId] = {
     name: els.editProductForm.elements.name.value.trim(),
@@ -2213,31 +2855,79 @@ function handleEditProduct(event) {
     description: els.editProductForm.elements.description.value.trim()
   };
   writeJson(STORAGE_KEYS.productEdits, productEdits);
+
+  if (state.supabase.ready && canManageCloudAdminData()) {
+    const nextProduct = {
+      ...currentProduct,
+      ...productEdits[productId]
+    };
+    try {
+      await saveProductToSupabase(nextProduct, { isCustom: productId.startsWith("custom-"), hidden: Boolean(currentProduct.hidden) });
+      await loadProductCatalog({ skipRender: true });
+    } catch (error) {
+      console.error("Could not sync edited product to Supabase", error);
+      state.supabase.productCatalogLoaded = false;
+      state.supabase.products = [];
+      showNotification("warning", "Edit Saved Locally", `Saved in this browser, but could not sync product edit to other devices: ${formatSupabaseError(error)}`, { duration: 8000 });
+    }
+  }
+
   renderProducts();
   showNotification("settings", "Product Updated", "The selected product details were updated successfully.");
 }
 
-function handleRemoveProduct() {
+async function handleRemoveProduct() {
   if (!canManageAdminData()) {
     showNotification("warning", "Admin Access Required", "Secure admin access is required to remove products.");
     return;
   }
   const productId = els.adminProductSelect.value;
+  const currentProduct = getProductById(productId, { includeHidden: true });
+  if (!currentProduct) {
+    showNotification("error", "Product Not Found", "The selected product could not be found.");
+    return;
+  }
   const hiddenProducts = readJson(STORAGE_KEYS.hiddenProducts, []);
   if (!hiddenProducts.includes(productId)) {
     hiddenProducts.push(productId);
     writeJson(STORAGE_KEYS.hiddenProducts, hiddenProducts);
   }
+
+  if (state.supabase.ready && canManageCloudAdminData()) {
+    try {
+      await saveProductToSupabase(currentProduct, { isCustom: productId.startsWith("custom-"), hidden: true });
+      await loadProductCatalog({ skipRender: true });
+    } catch (error) {
+      console.error("Could not sync hidden product to Supabase", error);
+      state.supabase.productCatalogLoaded = false;
+      state.supabase.products = [];
+      showNotification("warning", "Product Hidden Locally", `Hidden in this browser, but could not sync hidden state to other devices: ${formatSupabaseError(error)}`, { duration: 8000 });
+    }
+  }
+
   renderProducts();
   showNotification("warning", "Product Hidden", "The selected product card has been hidden from the shop.");
 }
 
-function handleRestoreProducts() {
+async function handleRestoreProducts() {
   if (!canManageAdminData()) {
     showNotification("warning", "Admin Access Required", "Secure admin access is required to restore products.");
     return;
   }
   writeJson(STORAGE_KEYS.hiddenProducts, []);
+
+  if (state.supabase.ready && canManageCloudAdminData()) {
+    try {
+      await restoreHiddenProductsInSupabase();
+      await loadProductCatalog({ skipRender: true });
+    } catch (error) {
+      console.error("Could not restore hidden products in Supabase", error);
+      state.supabase.productCatalogLoaded = false;
+      state.supabase.products = [];
+      showNotification("warning", "Cards Restored Locally", `Restored in this browser, but could not sync restore action to other devices: ${formatSupabaseError(error)}`, { duration: 8000 });
+    }
+  }
+
   renderProducts();
   showNotification("settings", "Products Restored", "All hidden products are visible again.");
 }
@@ -2719,11 +3409,6 @@ async function hydrateAdminScreenshotUrls(orders) {
 }
 
 function refreshPurchasePopupMessages() {
-  const products = getAllProducts();
-  const seededMessages = products.slice(0, 8).map((product, index) => ({
-    id: `seed-${product.id}`,
-    message: `Someone bought ${product.name} ${index + 1} ${index === 0 ? "minute" : "minutes"} ago.`
-  }));
   const orderMessages = getLocalOrders()
     .slice(0, 8)
     .map((order) => ({
@@ -2731,9 +3416,14 @@ function refreshPurchasePopupMessages() {
       message: `${order.customerName || "Someone"} bought ${order.plan} ${formatRelativeOrderTime(order.createdAt)}.`
     }));
 
-  state.purchasePopupMessages = [...orderMessages, ...seededMessages].slice(0, 10);
+  state.purchasePopupMessages = orderMessages.slice(0, 10);
   if (state.purchasePopupIndex >= state.purchasePopupMessages.length) {
     state.purchasePopupIndex = 0;
+  }
+
+  if (!state.purchasePopupMessages.length && els.purchasePopup) {
+    els.purchasePopup.classList.add("hidden");
+    els.purchasePopup.classList.remove("visible");
   }
 }
 
@@ -2745,11 +3435,15 @@ function startPurchasePopupLoop() {
   refreshPurchasePopupMessages();
   showNextPurchasePopup();
   window.clearInterval(state.purchasePopupTimer);
-  state.purchasePopupTimer = window.setInterval(showNextPurchasePopup, 6500);
+  state.purchasePopupTimer = window.setInterval(showNextPurchasePopup, PURCHASE_POPUP_INTERVAL_MS);
 }
 
 function showNextPurchasePopup() {
   if (!els.purchasePopup || !state.purchasePopupMessages.length) {
+    if (els.purchasePopup) {
+      els.purchasePopup.classList.add("hidden");
+      els.purchasePopup.classList.remove("visible");
+    }
     return;
   }
 
@@ -2764,7 +3458,7 @@ function showNextPurchasePopup() {
     if (els.purchasePopup) {
       els.purchasePopup.classList.remove("visible");
     }
-  }, 4200);
+  }, PURCHASE_POPUP_VISIBLE_MS);
 }
 
 function formatRelativeOrderTime(dateValue) {
@@ -3046,7 +3740,7 @@ function runSmokeTests() {
   console.assert(paymentPayload.setting_key === SUPABASE_CONFIG.paymentSettingsKey && paymentPayload.qr_url === "https://example.com/qr.jpg", "payment settings payload: expected shared payment payload fields");
   console.assert(paymentSettings.qrPath === "payment-settings/qr.jpg" && paymentSettings.bank === "Nabil", "payment settings mapping: expected shared payment row to map correctly");
   console.assert(refundedOrders[1].status === "Refunded" && normalizeOrderStatus(refundedOrders[1].status) === "Refunded", "admin refund action: expected refunded status to stay visible for My Orders");
-  console.assert(state.purchasePopupMessages.length > 0, "recently purchased popup: expected rotating activity messages");
+  console.assert(Array.isArray(state.purchasePopupMessages), "recently purchased popup: expected purchase popup state array");
   console.assert(orderCard.textContent.includes("THH-SMOKE") && orderCard.textContent.includes("Pending"), "My Orders rendering: expected order card content");
   console.groupEnd();
 }
