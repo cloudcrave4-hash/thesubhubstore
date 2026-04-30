@@ -344,6 +344,7 @@ const state = {
   adminOrderFilter: "all",
   adminUnlocked: false,
   adminRefreshTimer: null,
+  orderRefreshTimer: null,
   adminHasOrderBaseline: false,
   adminKnownOrderIds: new Set(),
   adminTitleOriginal: document.title,
@@ -482,6 +483,9 @@ function cacheElements() {
   els.invoiceGameIds = document.querySelector("#invoiceGameIds");
   els.invoiceNoteCard = document.querySelector("#invoiceNoteCard");
   els.invoiceNote = document.querySelector("#invoiceNote");
+  els.invoiceDeliveryCard = document.querySelector("#invoiceDeliveryCard");
+  els.invoiceDeliveryMessage = document.querySelector("#invoiceDeliveryMessage");
+  els.invoiceDeliveryDate = document.querySelector("#invoiceDeliveryDate");
   els.purchasePopup = document.querySelector("#purchasePopup");
 }
 
@@ -1542,6 +1546,14 @@ function populateInvoiceModal(order) {
   els.invoiceNote.textContent = order.note || "-";
   els.invoiceGameCard.classList.toggle("hidden", !gameIds);
   els.invoiceNoteCard.classList.toggle("hidden", !order.note);
+  if (els.invoiceDeliveryCard) {
+    const deliveryMessage = String(order.deliveryMessage || "").trim();
+    els.invoiceDeliveryMessage.textContent = deliveryMessage || "-";
+    els.invoiceDeliveryDate.textContent = order.deliverySentAt
+      ? `Sent ${new Date(order.deliverySentAt).toLocaleString()}`
+      : "";
+    els.invoiceDeliveryCard.classList.toggle("hidden", !deliveryMessage);
+  }
   els.invoiceSheet.dataset.orderId = order.id || "";
 }
 
@@ -1797,6 +1809,9 @@ function showView(view) {
   if (view === "orders") {
     renderOrders();
     void syncLocalOrdersFromSupabase({ rerender: true });
+    startOrderAutoRefresh();
+  } else {
+    stopOrderAutoRefresh();
   }
 
   if (state.supabase.ready && ["home", "pubg", "mlbb", "spotify", "netflix", "discord", "admin"].includes(view)) {
@@ -2237,6 +2252,11 @@ function createSupabaseOrderPayload(order, screenshotUrl) {
     mlbb_region_id: order.mlbbRegionId || null,
     note: order.note || null,
     screenshot_url: screenshotUrl || null,
+    screenshot_filename: order.screenshotFilename || null,
+    price: order.price || null,
+    product_id: order.productId || null,
+    delivery_message: order.deliveryMessage || null,
+    delivery_sent_at: order.deliverySentAt || null,
     status: order.status
   };
 }
@@ -2295,6 +2315,8 @@ function mergeRemoteOrdersIntoLocal(localOrders, remoteRows) {
       remoteId: remoteOrder.remoteId,
       createdAt: remoteOrder.createdAt || localOrder.createdAt,
       status: remoteOrder.status || localOrder.status,
+      deliveryMessage: remoteOrder.deliveryMessage || localOrder.deliveryMessage || "",
+      deliverySentAt: remoteOrder.deliverySentAt || localOrder.deliverySentAt || "",
       screenshotUrl: remoteOrder.screenshotUrl || localOrder.screenshotUrl || "",
       screenshotFilename: remoteOrder.screenshotFilename || localOrder.screenshotFilename || "",
       syncState: "synced",
@@ -2328,6 +2350,8 @@ function mapSupabaseOrder(row) {
     screenshotUrl,
     screenshotFilename: row.screenshot_filename || row.screenshot_name || getFilenameFromUrl(screenshotUrl),
     status: normalizeOrderStatus(row.status),
+    deliveryMessage: row.delivery_message || "",
+    deliverySentAt: row.delivery_sent_at || "",
     backend: "supabase",
     syncState: "synced"
   };
@@ -2445,6 +2469,8 @@ function createOrderCard(order, options = {}) {
     ? `<a class="inline-link" href="${escapeHtml(order.screenshotUrl)}" target="_blank" rel="noreferrer">View screenshot</a>`
     : "";
   const syncBadge = `<span class="sync-badge ${escapeHtml(order.syncState || "local")}">${escapeHtml(getSyncBadgeLabel(order))}</span>`;
+  const deliveryMessage = String(order.deliveryMessage || "").trim();
+  const deliverySentAt = order.deliverySentAt ? new Date(order.deliverySentAt).toLocaleString() : "";
 
   card.innerHTML = `
     <div class="order-top">
@@ -2466,10 +2492,23 @@ function createOrderCard(order, options = {}) {
       ${gameIds ? `<p class="form-note">${gameIds}</p>` : ""}
       ${screenshotLink}
       ${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}
+      ${deliveryMessage ? `
+        <div class="delivery-box">
+          <span>${options.admin ? "Delivery sent to customer" : "Your item / message"}</span>
+          <strong>${escapeHtml(deliveryMessage)}</strong>
+          ${deliverySentAt ? `<p class="form-note">${escapeHtml(deliverySentAt)}</p>` : ""}
+        </div>
+      ` : ""}
+      ${options.admin ? `
+        <label class="delivery-compose">
+          Delivery message / item
+          <textarea rows="3" data-delivery-message="${idHtml}" placeholder="Paste account details, code, login, or item instructions">${escapeHtml(deliveryMessage)}</textarea>
+        </label>
+      ` : ""}
       <div class="button-row">
         ${!options.admin ? `<button class="button primary" type="button" data-order-invoice="${idHtml}">View Invoice</button>` : ""}
         <button class="button ghost" type="button" data-buy-again="${escapeHtml(order.productId)}">Buy Again</button>
-        ${options.admin ? `<button class="button primary" type="button" data-admin-order="deliver" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Delivered</button><button class="button ghost" type="button" data-admin-order="refund" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Refunded</button><button class="button danger" type="button" data-admin-order="delete" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Delete</button>` : ""}
+        ${options.admin ? `<button class="button primary" type="button" data-admin-order="send-delivery" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Send Item</button><button class="button ghost" type="button" data-admin-order="deliver" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Delivered</button><button class="button ghost" type="button" data-admin-order="refund" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Mark Refunded</button><button class="button danger" type="button" data-admin-order="delete" data-order-id="${idHtml}" data-order-source="${escapeHtml(order.backend || "local")}">Delete</button>` : ""}
       </div>
     `;
   return card;
@@ -2633,6 +2672,26 @@ function stopAdminOrdersAutoRefresh() {
   if (state.adminRefreshTimer) {
     window.clearInterval(state.adminRefreshTimer);
     state.adminRefreshTimer = null;
+  }
+}
+
+function startOrderAutoRefresh() {
+  if (!state.supabase.ready) {
+    return;
+  }
+
+  stopOrderAutoRefresh();
+  state.orderRefreshTimer = window.setInterval(() => {
+    if (state.currentView === "orders") {
+      void syncLocalOrdersFromSupabase({ rerender: true });
+    }
+  }, 15000);
+}
+
+function stopOrderAutoRefresh() {
+  if (state.orderRefreshTimer) {
+    window.clearInterval(state.orderRefreshTimer);
+    state.orderRefreshTimer = null;
   }
 }
 
@@ -3512,10 +3571,31 @@ async function handleAdminOrderAction(button) {
   const action = button.dataset.adminOrder;
   const orderId = button.dataset.orderId;
   const source = button.dataset.orderSource || "local";
+  const deliveryMessage = getDeliveryMessageForOrder(orderId);
   button.disabled = true;
 
   try {
+    if (action === "send-delivery" && !deliveryMessage) {
+      showNotification("warning", "Delivery Message Required", "Add the item, code, login, or delivery instructions before sending.");
+      return;
+    }
+
     if (state.supabase.ready && source === "supabase" && canManageCloudAdminData()) {
+      if (action === "send-delivery") {
+        const { error } = await state.supabase.client
+          .from(SUPABASE_CONFIG.ordersTable)
+          .update({
+            status: "Completed",
+            delivery_message: deliveryMessage,
+            delivery_sent_at: new Date().toISOString()
+          })
+          .eq("order_code", orderId);
+
+        if (error) {
+          throw error;
+        }
+      }
+
       if (action === "deliver") {
         const { error } = await state.supabase.client
           .from(SUPABASE_CONFIG.ordersTable)
@@ -3554,6 +3634,7 @@ async function handleAdminOrderAction(button) {
     renderOrders();
     await renderAdminOrders();
     const actionMessages = {
+      "send-delivery": ["success", "Item Sent", "The delivery message was saved to the order for the customer."],
       deliver: ["success", "Order Marked Completed", "The order status was updated to Completed."],
       refund: ["warning", "Order Marked Refunded", "The order status was updated to Refunded."],
       delete: ["settings", "Order Deleted", "The order was removed from the admin list."]
@@ -3567,8 +3648,31 @@ async function handleAdminOrderAction(button) {
   }
 }
 
+function getDeliveryMessageForOrder(orderId) {
+  if (!els.adminOrdersList) {
+    return "";
+  }
+  const escapedOrderId = window.CSS && CSS.escape ? CSS.escape(orderId) : String(orderId).replace(/"/g, '\\"');
+  const field = els.adminOrdersList.querySelector(`[data-delivery-message="${escapedOrderId}"]`);
+  return field ? field.value.trim() : "";
+}
+
 function applyLocalAdminOrderAction(action, orderId) {
   let orders = getLocalOrders();
+
+  if (action === "send-delivery") {
+    const deliveryMessage = getDeliveryMessageForOrder(orderId);
+    const deliverySentAt = new Date().toISOString();
+    orders = orders.map((order) => order.id === orderId
+      ? {
+          ...order,
+          status: "Completed",
+          deliveryMessage,
+          deliverySentAt,
+          syncState: order.syncState || "local"
+        }
+      : order);
+  }
 
   if (action === "deliver") {
     orders = orders.map((order) => order.id === orderId ? { ...order, status: "Completed", syncState: order.syncState || "local" } : order);

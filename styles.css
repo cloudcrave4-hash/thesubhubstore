@@ -1445,6 +1445,38 @@ textarea {
   text-decoration: underline;
 }
 
+.delivery-box {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 12px;
+}
+
+.delivery-box span,
+.delivery-compose {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.delivery-box strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.delivery-compose {
+  display: grid;
+  gap: 8px;
+}
+
+.delivery-compose textarea {
+  min-height: 88px;
+}
+
 .empty-state {
   border: 1px dashed var(--line);
   border-radius: 16px;

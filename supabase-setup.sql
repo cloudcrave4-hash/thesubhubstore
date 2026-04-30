@@ -20,10 +20,18 @@ create table if not exists public.orders (
   note text,
   screenshot_url text,
   screenshot_filename text,
+  delivery_message text,
+  delivery_sent_at timestamptz,
   status text not null default 'Pending',
   price text,
   product_id text
 );
+
+alter table public.orders
+add column if not exists delivery_message text;
+
+alter table public.orders
+add column if not exists delivery_sent_at timestamptz;
 
 create table if not exists public.store_settings (
   setting_key text primary key,
