@@ -343,8 +343,6 @@ const state = {
   orderFilter: "all",
   adminOrderFilter: "all",
   adminUnlocked: false,
-  adminRefreshTimer: null,
-  orderRefreshTimer: null,
   adminHasOrderBaseline: false,
   adminKnownOrderIds: new Set(),
   adminTitleOriginal: document.title,
@@ -790,7 +788,6 @@ function unlockAdminUi(mode, user = null) {
   }
   updateAdminAlertButton();
   resetAdminInactivityTimer();
-  startAdminOrdersAutoRefresh();
   void refreshAdminOrders(true);
 }
 
@@ -812,7 +809,6 @@ function lockAdminUi() {
     els.adminAuthNote.textContent = "Enter your admin password to access the admin panel. The session locks after inactivity.";
   }
   stopAdminInactivityTimer();
-  stopAdminOrdersAutoRefresh();
   resetAdminTitle();
 }
 
@@ -1809,9 +1805,6 @@ function showView(view) {
   if (view === "orders") {
     renderOrders();
     void syncLocalOrdersFromSupabase({ rerender: true });
-    startOrderAutoRefresh();
-  } else {
-    stopOrderAutoRefresh();
   }
 
   if (state.supabase.ready && ["home", "pubg", "mlbb", "spotify", "netflix", "discord", "admin"].includes(view)) {
@@ -1819,12 +1812,10 @@ function showView(view) {
   }
 
   if (view === "admin") {
-    startAdminOrdersAutoRefresh();
     noteAdminActivity();
     void refreshAdminOrders();
   } else {
     stopAdminInactivityTimer();
-    stopAdminOrdersAutoRefresh();
   }
 
   els.navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === view));
@@ -2652,46 +2643,6 @@ function stopAdminInactivityTimer() {
   if (state.adminInactivityTimer) {
     window.clearTimeout(state.adminInactivityTimer);
     state.adminInactivityTimer = null;
-  }
-}
-
-function startAdminOrdersAutoRefresh() {
-  if (!state.adminUnlocked || !state.supabase.ready) {
-    return;
-  }
-
-  stopAdminOrdersAutoRefresh();
-  state.adminRefreshTimer = window.setInterval(() => {
-    if (state.currentView === "admin" && state.adminUnlocked) {
-      void refreshAdminOrders();
-    }
-  }, 12000);
-}
-
-function stopAdminOrdersAutoRefresh() {
-  if (state.adminRefreshTimer) {
-    window.clearInterval(state.adminRefreshTimer);
-    state.adminRefreshTimer = null;
-  }
-}
-
-function startOrderAutoRefresh() {
-  if (!state.supabase.ready) {
-    return;
-  }
-
-  stopOrderAutoRefresh();
-  state.orderRefreshTimer = window.setInterval(() => {
-    if (state.currentView === "orders") {
-      void syncLocalOrdersFromSupabase({ rerender: true });
-    }
-  }, 15000);
-}
-
-function stopOrderAutoRefresh() {
-  if (state.orderRefreshTimer) {
-    window.clearInterval(state.orderRefreshTimer);
-    state.orderRefreshTimer = null;
   }
 }
 
