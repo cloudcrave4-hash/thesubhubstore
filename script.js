@@ -2462,6 +2462,9 @@ function createOrderCard(order, options = {}) {
   const syncBadge = `<span class="sync-badge ${escapeHtml(order.syncState || "local")}">${escapeHtml(getSyncBadgeLabel(order))}</span>`;
   const deliveryMessage = String(order.deliveryMessage || "").trim();
   const deliverySentAt = order.deliverySentAt ? new Date(order.deliverySentAt).toLocaleString() : "";
+  const deliveryDraft = options.deliveryDrafts && options.deliveryDrafts.has(order.id)
+    ? options.deliveryDrafts.get(order.id)
+    : deliveryMessage;
 
   card.innerHTML = `
     <div class="order-top">
@@ -2493,7 +2496,7 @@ function createOrderCard(order, options = {}) {
       ${options.admin ? `
         <label class="delivery-compose">
           Delivery message / item
-          <textarea rows="3" data-delivery-message="${idHtml}" placeholder="Paste account details, code, login, or item instructions">${escapeHtml(deliveryMessage)}</textarea>
+          <textarea rows="3" data-delivery-message="${idHtml}" placeholder="Paste account details, code, login, or item instructions">${escapeHtml(deliveryDraft)}</textarea>
         </label>
       ` : ""}
       <div class="button-row">
@@ -3205,6 +3208,7 @@ async function renderAdminOrders() {
     return [];
   }
 
+  const deliveryDrafts = getDeliveryDrafts();
   let orders = [];
 
   if (state.supabase.ready && canManageCloudAdminData()) {
@@ -3229,8 +3233,26 @@ async function renderAdminOrders() {
     return orders;
   }
 
-  filteredOrders.forEach((order) => els.adminOrdersList.appendChild(createOrderCard(order, { admin: true })));
+  filteredOrders.forEach((order) => els.adminOrdersList.appendChild(createOrderCard(order, {
+    admin: true,
+    deliveryDrafts
+  })));
   return orders;
+}
+
+function getDeliveryDrafts() {
+  const drafts = new Map();
+  if (!els.adminOrdersList) {
+    return drafts;
+  }
+
+  els.adminOrdersList.querySelectorAll("[data-delivery-message]").forEach((field) => {
+    const orderId = field.getAttribute("data-delivery-message");
+    if (orderId) {
+      drafts.set(orderId, field.value);
+    }
+  });
+  return drafts;
 }
 
 function processAdminOrderNotifications(orders) {
