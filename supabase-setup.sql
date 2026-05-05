@@ -33,6 +33,15 @@ add column if not exists delivery_message text;
 alter table public.orders
 add column if not exists delivery_sent_at timestamptz;
 
+alter table public.orders
+add column if not exists screenshot_filename text;
+
+alter table public.orders
+add column if not exists price text;
+
+alter table public.orders
+add column if not exists product_id text;
+
 create table if not exists public.store_settings (
   setting_key text primary key,
   wallet text,

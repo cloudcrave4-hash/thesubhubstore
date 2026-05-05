@@ -760,6 +760,38 @@ p {
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38);
 }
 
+.art-youtube {
+  background:
+    radial-gradient(circle at 70% 24%, rgba(255, 255, 255, 0.34), transparent 4.4rem),
+    linear-gradient(145deg, #1f0303, #991b1b 58%, #ef4444);
+}
+
+.logo-youtube {
+  width: min(88%, 210px);
+  height: 146px;
+}
+
+.youtube-play-card {
+  position: absolute;
+  display: grid;
+  width: 116px;
+  height: 78px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 24px;
+  background: #ef4444;
+  box-shadow: inset 0 -14px 24px rgba(127, 29, 29, 0.28), 0 18px 34px rgba(0, 0, 0, 0.32);
+}
+
+.youtube-play-triangle {
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 25px solid #ffffff;
+  transform: translateX(4px);
+}
+
 .music-disc {
   position: absolute;
   display: grid;
@@ -1433,6 +1465,10 @@ textarea {
 .sync-badge.local {
   background: rgba(250, 204, 21, 0.14);
   color: var(--yellow);
+}
+
+.sync-error {
+  color: #fecdd3;
 }
 
 .inline-link {

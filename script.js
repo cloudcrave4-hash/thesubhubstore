@@ -46,6 +46,7 @@ const categories = {
   pubg: { label: "PUBG UC", art: "art-pubg", logo: "UC" },
   mlbb: { label: "MLBB Diamonds", art: "art-mlbb", logo: "D" },
   spotify: { label: "Spotify Premium", art: "art-spotify", logo: "S" },
+  youtube: { label: "YouTube Premium", art: "art-youtube", logo: "YT" },
   netflix: { label: "Netflix Plans", art: "art-netflix", logo: "N" },
   discord: { label: "Giftscards & others", art: "art-discord", logo: "NITRO" }
 };
@@ -75,6 +76,8 @@ const baseProducts = [
   { id: "spotify-individual", category: "spotify", name: "Individual", price: "NPR 199", description: "Spotify Premium individual plan." },
   { id: "spotify-duo", category: "spotify", name: "Duo", price: "NPR 899", description: "Spotify Premium duo plan." },
   { id: "spotify-family", category: "spotify", name: "Family", price: "NPR 1300", description: "Spotify Premium family plan." },
+
+  { id: "youtube-premium-1-month", category: "youtube", name: "YouTube Premium 1 Month", price: "NPR 249", description: "One month YouTube Premium subscription with quick delivery after payment confirmation." },
 
   { id: "netflix-1", category: "netflix", name: "1 Screen", price: "NPR 449", description: "Netflix plan with single red N card art." },
   { id: "netflix-2", category: "netflix", name: "2 Screen", price: "NPR 900", description: "Netflix plan for two screens." },
@@ -250,7 +253,16 @@ const baseProducts = [
       "Safe delivery after payment confirmation"
     ]
   },
-  { id: "crunchyroll-showcase", category: "discord", name: "Crunchyroll Subscription", price: "From NPR 299", description: "Monthly and yearly Crunchyroll premium plans with four options.", notPurchasable: true },
+  {
+    id: "crunchyroll-showcase",
+    category: "discord",
+    name: "Crunchyroll Subscription",
+    price: "From NPR 299",
+    description: "Monthly and yearly Crunchyroll premium plans with four options.",
+    notPurchasable: true,
+    group: "crunchyroll",
+    optionCount: 4
+  },
   {
     id: "crunchyroll-fan-monthly",
     category: "discord",
@@ -1192,6 +1204,16 @@ function createProductLogo(product) {
     return logo;
   }
 
+  if (product.category === "youtube") {
+    logo.innerHTML = `
+      <span class="youtube-play-card">
+        <span class="youtube-play-triangle"></span>
+      </span>
+      <span class="plan-chip">${getPlanShortName(product.name)}</span>
+    `;
+    return logo;
+  }
+
   if (product.category === "netflix") {
     logo.innerHTML = `
       <img class="netflix-product-image" src="assets/netflix-product.png" alt="Red N logo on black background">
@@ -1366,6 +1388,12 @@ function getProductDetailContent(product) {
       required: "Full name, email, and payment screenshot.",
       refund: "Refunds are only possible before the premium upgrade is activated on the account.",
       instructions: "Use the same email you want us to contact about your Spotify plan and add any account notes before checkout."
+    },
+    youtube: {
+      delivery: "10 to 30 minutes after payment confirmation",
+      required: "Full name, email, and payment screenshot.",
+      refund: "Refunds are only possible before the YouTube Premium activation is delivered.",
+      instructions: "Use the email you want us to contact about your YouTube Premium order and add any account notes before checkout."
     },
     netflix: {
       delivery: "10 to 30 minutes after payment confirmation",
@@ -1718,7 +1746,7 @@ function getMlbbProductImage(product) {
 }
 
 function getPlanShortName(name) {
-  const clean = String(name).replace(/Discord Nitro|Netflix|Spotify|Premium|Plan/gi, "").trim();
+  const clean = String(name).replace(/Discord Nitro|Netflix|Spotify|YouTube|Premium|Plan/gi, "").trim();
   if (/Individual/i.test(clean)) return "IND";
   if (/Family/i.test(clean)) return "FAM";
   if (/Duo/i.test(clean)) return "DUO";
@@ -1807,7 +1835,7 @@ function showView(view) {
     void syncLocalOrdersFromSupabase({ rerender: true });
   }
 
-  if (state.supabase.ready && ["home", "pubg", "mlbb", "spotify", "netflix", "discord", "admin"].includes(view)) {
+  if (state.supabase.ready && ["home", "pubg", "mlbb", "spotify", "youtube", "netflix", "discord", "admin"].includes(view)) {
     void loadProductCatalog();
   }
 
@@ -2486,6 +2514,7 @@ function createOrderCard(order, options = {}) {
       ${gameIds ? `<p class="form-note">${gameIds}</p>` : ""}
       ${screenshotLink}
       ${order.note ? `<p>${escapeHtml(order.note)}</p>` : ""}
+      ${order.syncError ? `<p class="form-note sync-error">Supabase sync error: ${escapeHtml(order.syncError)}</p>` : ""}
       ${deliveryMessage ? `
         <div class="delivery-box">
           <span>${options.admin ? "Delivery sent to customer" : "Your item / message"}</span>
