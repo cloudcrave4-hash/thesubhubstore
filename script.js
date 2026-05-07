@@ -76,6 +76,9 @@ const baseProducts = [
   { id: "spotify-individual", category: "spotify", name: "Individual", price: "NPR 199", description: "Spotify Premium individual plan." },
   { id: "spotify-duo", category: "spotify", name: "Duo", price: "NPR 899", description: "Spotify Premium duo plan." },
   { id: "spotify-family", category: "spotify", name: "Family", price: "NPR 1300", description: "Spotify Premium family plan." },
+  { id: "spotify-3-months", category: "spotify", name: "3 Months", price: "NPR 550", description: "Spotify Premium 3 month plan." },
+  { id: "spotify-6-months", category: "spotify", name: "6 Months", price: "NPR 1200", description: "Spotify Premium 6 month plan." },
+  { id: "spotify-1-year", category: "spotify", name: "1 Year", price: "NPR 2500", description: "Spotify Premium 1 year plan." },
 
   { id: "youtube-premium-1-month", category: "youtube", name: "YouTube Premium 1 Month", price: "NPR 249", description: "One month YouTube Premium subscription with quick delivery after payment confirmation." },
 
