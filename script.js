@@ -92,6 +92,7 @@ const baseProducts = [
   { id: "discord-3", category: "discord", name: "Discord Nitro 3 Months", price: "NPR 449", description: "Three-month Nitro-style digital package." },
   { id: "steam-giftcard", category: "discord", name: "Steam Giftcard", price: "Editable by admin", description: "Giftcard price can be changed from Admin." },
   { id: "chatgpt-plus", category: "discord", name: "ChatGPT Plus", price: "NPR 599", description: "ChatGPT Plus subscription with quick delivery after payment confirmation." },
+  { id: "claude-pro-1-month", category: "discord", name: "Claude Pro 1 Month", price: "NPR 2500", description: "Claude Pro 1 month subscription for AI productivity and conversations." },
   { id: "premium-games-showcase", category: "discord", name: "Premium Games", price: "From Rs 1500", description: "Browse premium game products like GTA 5, FC 26, Rust, God of War, Raft, and more.", notPurchasable: true, group: "premium-games", optionCount: 7 },
   {
     id: "premium-gta-5",
